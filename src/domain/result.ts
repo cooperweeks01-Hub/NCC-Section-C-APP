@@ -30,13 +30,25 @@ export type CheckName =
   | "Advisory";
 
 /**
- * Result status. `insufficient-input` is the safe-degradation state: a required
- * input is missing OR a required NCC value is unverified/null. The engine must
- * return this rather than guessing or defaulting (brief §9).
+ * Result status.
+ *
+ * - `complies` / `fails` — a genuine pass/fail check that compares an input
+ *   against an NCC limit (e.g. compartment size vs Table C3D3).
+ * - `determined` — a pure LOOKUP/DETERMINATION that has no pass/fail because the
+ *   tool takes no user value to test against (e.g. type of construction resolves
+ *   the *required* Type from Table C2D2). Reporting it as `complies` would imply
+ *   a verdict that was never performed; `advisory` would collide with the §6.8
+ *   cross-reference family below. This is its own neutral state.
+ * - `advisory` — a §6.8 cross-reference / guidance result (`AdvisoryDetail`).
+ * - `flag` — a §6.9 knock-on flag (`FlagDetail`).
+ * - `insufficient-input` — the safe-degradation state: a required input is
+ *   missing OR a required NCC value is unverified/null. The engine must return
+ *   this rather than guessing or defaulting (brief §9).
  */
 export type ResultStatus =
   | "complies"
   | "fails"
+  | "determined"
   | "advisory"
   | "flag"
   | "insufficient-input";

@@ -37,6 +37,14 @@ export function insufficientInput<TDetail extends ResultDetail>(args: {
   inputSnapshot: Partial<BuildingInput>;
   tableRef?: string;
   compartmentId?: string;
+  /**
+   * Whether an unverified NCC value was involved. Defaults to `true` — the usual
+   * reason for insufficient-input. Set `false` when the DATA is verified but a
+   * required INPUT is missing/out of range: the result is still insufficient-input
+   * (we cannot decide), but no unverified value was touched, so the DRAFT banner
+   * must not fire for it.
+   */
+  usesUnverifiedData?: boolean;
 }): ComplianceResult<TDetail> {
   const result: ComplianceResult<TDetail> = {
     check: args.check,
@@ -45,7 +53,7 @@ export function insufficientInput<TDetail extends ResultDetail>(args: {
     clauseRef: args.clauseRef,
     summary: args.summary,
     inputSnapshot: args.inputSnapshot,
-    usesUnverifiedData: true,
+    usesUnverifiedData: args.usesUnverifiedData ?? true,
   };
   // exactOptionalPropertyTypes: only attach optional fields when provided.
   if (args.tableRef !== undefined) result.tableRef = args.tableRef;
