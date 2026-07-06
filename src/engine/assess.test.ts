@@ -1,0 +1,117 @@
+import { describe, expect, it } from "vitest";
+import type { BuildingInput, Compartment, ExternalWall } from "../domain/building.ts";
+import { nccData } from "../data/index.ts";
+import { syntheticDataLayer } from "../data/__fixtures__/synthetic-data-layer.ts";
+import { assessProject } from "./assess.ts";
+
+/**
+ * Phase C · orchestrator integration — the three DoD worked examples (brief §9)
+ * plus the sprinkler-gating rule. Per-rule tests call rules directly; these prove
+ * they wire together, that the C3D4 question surfaces only at the decision point,
+ * and that multi-compartment results scope by compartmentId.
+ */
+function wall(overrides: Partial<ExternalWall> = {}): ExternalWall {
+  return { id: "w1", name: "Wall", distanceToFireSourceFeatureM: 6, loadbearing: true, hasOpenings: false, angleToAdjacentOpeningDeg: null, ...overrides };
+}
+function comp(overrides: Partial<Compartment> = {}): Compartment {
+  return { id: "c1", name: "Compartment 1", floorAreaM2: 1000, volumeM3: 5000, sizeExemption: null, externalWalls: [], ...overrides };
+}
+function project(overrides: Partial<BuildingInput> = {}): BuildingInput {
+  return {
+    buildingClass: "8",
+    riseInStoreys: 1,
+    effectiveHeightM: 8,
+    sprinkleredToSpec17: null,
+    openSpaceAroundBuildingM: null,
+    perimeterVehicularAccess: null,
+    compartments: [comp()],
+    fireWallsSeparateCompartments: false,
+    ...overrides,
+  };
+}
+
+describe("WORKED EXAMPLE 1 — Type C Class 8 over-compartment routes through C3D4", () => {
+  it("size fails and a LargeIsolated result appears (degraded on real unverified caps)", () => {
+    const input = project({ buildingClass: "8", riseInStoreys: 1, compartments: [comp({ floorAreaM2: 5000, volumeM3: 25000 })] });
+    const { requiredType, results } = assessProject(input, nccData);
+    expect(requiredType).toBe("C");
+    const size = results.find((r) => r.check === "CompartmentSize")!;
+    expect(size.status).toBe("fails");
+    const li = results.find((r) => r.check === "LargeIsolated");
+    expect(li).toBeDefined(); // routed → the sprinkler question surfaces here
+    expect(li!.status).toBe("insufficient-input"); // real C3D4 caps unverified
+  });
+
+  it("on the fixture (verified caps) the C3D4 open-space pathway resolves end-to-end", () => {
+    const input = project({ buildingClass: "8", riseInStoreys: 1, openSpaceAroundBuildingM: 20, compartments: [comp({ floorAreaM2: 5000, volumeM3: 25000 })] });
+    const { results } = assessProject(input, syntheticDataLayer);
+    const li = results.find((r) => r.check === "LargeIsolated")!;
+    expect(li.status).toBe("complies");
+    expect(li.pathway).toMatch(/open space/i);
+  });
+});
+
+describe("GATING — the sprinkler question is asked ONLY at the decision point", () => {
+  it("a size-compliant compartment produces NO LargeIsolated result", () => {
+    // Class 8 rise 4 → A, limit 5000/30000; compartment 4000/25000 is within.
+    const input = project({ riseInStoreys: 4, compartments: [comp({ floorAreaM2: 4000, volumeM3: 25000 })] });
+    const { requiredType, results } = assessProject(input, nccData);
+    expect(requiredType).toBe("A");
+    expect(results.find((r) => r.check === "CompartmentSize")!.status).toBe("complies");
+    expect(results.some((r) => r.check === "LargeIsolated")).toBe(false);
+  });
+});
+
+describe("WORKED EXAMPLE 2 — multi-compartment building, results scoped by compartmentId", () => {
+  it("assesses each compartment independently; building-level results appear once", () => {
+    const c1 = comp({ id: "c1", name: "Office", floorAreaM2: 2000, volumeM3: 10000, externalWalls: [wall({ id: "c1w1" })] });
+    const c2 = comp({ id: "c2", name: "Store", floorAreaM2: 9000, volumeM3: 50000, externalWalls: [wall({ id: "c2w1", distanceToFireSourceFeatureM: 1.0 })] });
+    const input = project({ buildingClass: "5", riseInStoreys: 3, fireWallsSeparateCompartments: true, compartments: [c1, c2] });
+    const { requiredType, results } = assessProject(input, nccData);
+    expect(requiredType).toBe("B"); // Class 5 rise 3
+
+    // Each compartment's per-compartment results scope to it.
+    const c1Results = results.filter((r) => r.compartmentId === "c1");
+    const c2Results = results.filter((r) => r.compartmentId === "c2");
+    expect(c1Results.map((r) => r.check).sort()).toEqual(["CompartmentSize", "SetbackSeparation"]);
+    // c2 (9000 m² > 5500 Type B limit for Class 5) fails and routes to C3D4.
+    expect(c2Results.map((r) => r.check).sort()).toEqual(["CompartmentSize", "LargeIsolated", "SetbackSeparation"]);
+    expect(c2Results.find((r) => r.check === "CompartmentSize")!.status).toBe("fails");
+
+    // Building-level results carry no compartmentId and appear exactly once.
+    const buildingLevel = results.filter((r) => r.compartmentId === undefined);
+    expect(buildingLevel.filter((r) => r.check === "TypeOfConstruction")).toHaveLength(1);
+    expect(buildingLevel.filter((r) => r.check === "FrlSchedule")).toHaveLength(1);
+  });
+});
+
+describe("WORKED EXAMPLE 3 — setback / external-wall FRL flows through the orchestrator", () => {
+  it("a Class 8 Type A wall at 6 m yields the determined Spec 5 FRL", () => {
+    const input = project({ riseInStoreys: 4, compartments: [comp({ floorAreaM2: 1000, volumeM3: 5000, externalWalls: [wall({ distanceToFireSourceFeatureM: 6, loadbearing: true })] })] });
+    const { results } = assessProject(input, nccData);
+    const setback = results.find((r) => r.check === "SetbackSeparation")!;
+    expect(setback.status).toBe("determined");
+    expect(setback.detail).toMatchObject({ walls: [{ requiredExtWallFrl: { structural: 240, integrity: 180, insulation: 90 }, clauseRef: "S5C11a" }] });
+  });
+});
+
+describe("orchestrator flags, advisories, and out-of-scope", () => {
+  it("effective height > 25 m raises the E1D5 sprinkler flag", () => {
+    const input = project({ effectiveHeightM: 30 });
+    const flags = assessProject(input, nccData).results.filter((r) => r.check === "KnockOnFlag");
+    expect(flags.some((r) => r.clauseRef === "E1D5")).toBe(true);
+  });
+
+  it("always surfaces §6.8 advisory cross-references", () => {
+    const advisories = assessProject(project(), nccData).results.filter((r) => r.check === "Advisory");
+    expect(advisories.length).toBeGreaterThanOrEqual(3);
+    expect(advisories.every((r) => r.status === "advisory")).toBe(true);
+  });
+
+  it("an out-of-scope class is not assessed beyond the scope notice", () => {
+    const { inScope, results } = assessProject(project({ buildingClass: "9a" }), nccData);
+    expect(inScope).toBe(false);
+    expect(results).toHaveLength(1);
+    expect(results[0]!.summary).toMatch(/out of scope/i);
+  });
+});

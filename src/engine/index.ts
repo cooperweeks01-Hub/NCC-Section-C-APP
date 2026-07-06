@@ -7,3 +7,5 @@ export { assessCompartmentSize } from "./compartment-size.ts";
 export { assessLargeIsolated } from "./large-isolated.ts";
 export { assessSetbackSeparation } from "./setback-separation.ts";
 export { assessFrlSchedule } from "./frl-schedule.ts";
+export { assessProject } from "./assess.ts";
+export type { Assessment } from "./assess.ts";
