@@ -6,10 +6,10 @@
  * data layer as `NccValue`s.
  */
 
-/** Building classes in scope for the MVP: Class 5–9 only (brief "Do NOT build"). */
+/** Building classes the NCC defines in the 5–9 range (a fact — safe to encode). */
 export type BuildingClass = "5" | "6" | "7a" | "7b" | "8" | "9a" | "9b" | "9c";
 
-/** All in-scope classes, for iteration / UI enumeration. */
+/** All NCC 5–9 classes, for iteration / UI enumeration. */
 export const BUILDING_CLASSES: readonly BuildingClass[] = [
   "5",
   "6",
@@ -20,6 +20,20 @@ export const BUILDING_CLASSES: readonly BuildingClass[] = [
   "9b",
   "9c",
 ] as const;
+
+/**
+ * The classes this tool actually assesses in v1. The verified NCC data extract
+ * covers only these; every other class returns "out of scope — not assessed"
+ * (never a guessed result). See `docs/ncc-section-c-data-verified.md`.
+ */
+export type InScopeClass = "5" | "7a" | "7b" | "8";
+
+export const IN_SCOPE_CLASSES: readonly InScopeClass[] = ["5", "7a", "7b", "8"] as const;
+
+/** Type guard: narrows a `BuildingClass` to an `InScopeClass`. */
+export function isInScope(cls: BuildingClass): cls is InScopeClass {
+  return (IN_SCOPE_CLASSES as readonly string[]).includes(cls);
+}
 
 /** Type of construction determined by Table C2D2. */
 export type ConstructionType = "A" | "B" | "C";
@@ -42,32 +56,15 @@ export interface FRL {
 }
 
 /**
- * The building elements a Spec 5 FRL schedule is expressed per (scaffold §3, §7).
- * This is a fixed, NCC-derived list of element *names* (a fact — safe to encode);
- * the FRL *values* against each element remain `NccValue`s in the data layer.
+ * C3D3 size-check carve-out (verified extract, note 2): the C3D3 compartment-size
+ * limit does NOT apply to a sprinklered carpark, an open-deck carpark, or an open
+ * spectator stand (C3D5(1)). This is a BRANCH, not a value — the size check is
+ * skipped, not computed against the Type C limit.
  */
-export type BuildingElement =
-  | "externalWallLoadbearing"
-  | "externalWallNonLoadbearing"
-  | "commonOrFireWall"
-  | "internalWallLoadbearing"
-  | "internalWallNonLoadbearing"
-  | "column"
-  | "floor"
-  | "roof"
-  | "shaft";
-
-export const BUILDING_ELEMENTS: readonly BuildingElement[] = [
-  "externalWallLoadbearing",
-  "externalWallNonLoadbearing",
-  "commonOrFireWall",
-  "internalWallLoadbearing",
-  "internalWallNonLoadbearing",
-  "column",
-  "floor",
-  "roof",
-  "shaft",
-] as const;
+export type CompartmentSizeExemption =
+  | "sprinkleredCarpark"
+  | "openDeckCarpark"
+  | "openSpectatorStand";
 
 /** An external wall and its distance to the nearest fire-source feature. */
 export interface ExternalWall {
@@ -80,8 +77,21 @@ export interface ExternalWall {
    * definition of "fire-source feature" is a Phase 0 verification item.
    */
   distanceToFireSourceFeatureM: number;
+  /**
+   * Loadbearing? Selects the loadbearing vs non-loadbearing external-wall band
+   * set in Spec 5 (Type A/B). Type C has a single "parts of external walls" table
+   * so this is not consulted there.
+   */
+  loadbearing: boolean;
   /** Whether the wall contains openings (affects C4D4 separation logic). */
   hasOpenings: boolean;
+  /**
+   * Angle (degrees) between this wall and the opening in the adjacent compartment
+   * across a fire wall, for the C4D4 separation check. `null` when not applicable
+   * / not supplied — the separation sub-check then degrades to insufficient-input
+   * rather than guessing (there is no adjacency graph in v1).
+   */
+  angleToAdjacentOpeningDeg: number | null;
 }
 
 /**
@@ -94,6 +104,12 @@ export interface Compartment {
   floorAreaM2: number;
   volumeM3: number;
   externalWalls: ExternalWall[];
+  /**
+   * C3D3 size-check carve-out, or `null` for a normal compartment. When set, the
+   * compartment-size rule skips the C3D3 comparison entirely (verified extract,
+   * note 2) — it never applies the Type C limit to an exempt carpark/stand.
+   */
+  sizeExemption: CompartmentSizeExemption | null;
 }
 
 /**

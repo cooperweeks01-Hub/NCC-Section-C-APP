@@ -1,4 +1,5 @@
 import type { ConstructionType } from "../domain/building.ts";
+import { isInScope } from "../domain/building.ts";
 import { isUsable } from "../domain/ncc-value.ts";
 import type { C2D2Band } from "../data/schema.ts";
 import type {
@@ -95,9 +96,24 @@ export const assessTypeOfConstruction: RuleFn<TypeOfConstructionDetail> = (ctx) 
   const { input } = ctx;
   const rise = input.riseInStoreys;
   const inputSnapshot = snapshotFor(input, "buildingClass", "riseInStoreys");
-  const c2d2Value = ctx.data.c2d2[input.buildingClass];
 
-  // Safe degradation: unverified/null C2D2 for this class ⇒ cannot determine Type.
+  // Scope gate: only Class 5/7a/7b/8 are assessed. Any other class is reported
+  // "out of scope — not assessed", never a guessed Type (verified extract note 3).
+  if (!isInScope(input.buildingClass)) {
+    return insufficientInput({
+      check: "TypeOfConstruction",
+      clauseRef: "C2D2",
+      tableRef: "Table C2D2",
+      detail: { requiredType: null, riseInStoreys: rise, levers: [] },
+      summary: `Class ${input.buildingClass} is out of scope for this tool — not assessed (in scope: Class 5, 7a, 7b, 8).`,
+      inputSnapshot,
+      usesUnverifiedData: false,
+    });
+  }
+
+  const c2d2Value = ctx.data.c2d2;
+
+  // Safe degradation: unverified/null C2D2 ⇒ cannot determine Type.
   if (!isUsable(c2d2Value)) {
     return insufficientInput({
       check: "TypeOfConstruction",

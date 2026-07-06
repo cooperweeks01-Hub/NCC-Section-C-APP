@@ -30,18 +30,25 @@
       height*, *fire compartment*, *fire-source feature*, *fire wall*, *FRL*, and
       *sprinkler system (Spec 17)* (scaffold §4).
 
-## Tables to transcribe
+## Tables — verification status
 
-| # | Value / table | Data file | Structure to fill | Verified |
-|---|---|---|---|---|
-| 1 | **Table C2D2** — required Type by (Class, rise in storeys) | [`src/data/tables/c2d2.ts`](../src/data/tables/c2d2.ts) | Per Class 5–9: ordered `C2D2Band[]` (min/max rise → Type A/B/C) | ☐ |
-| 2 | **Table C3D3** — max compartment floor area + volume by (Class, Type) | [`src/data/tables/c3d3.ts`](../src/data/tables/c3d3.ts) | Every Class×Type cell: `maxFloorAreaM2`, `maxVolumeM3` | ☐ |
-| 3 | **C3D4 caps** — large-isolated max area / max volume | [`src/data/tables/c3d4-c3d5.ts`](../src/data/tables/c3d4-c3d5.ts) | `maxFloorAreaM2` (headline 18,000 m²), `maxVolumeM3` (headline 108,000 m³) — **confirm, do not assume** | ☐ |
-| 4 | **C3D5(1) open space** — min width around building | [`src/data/tables/c3d4-c3d5.ts`](../src/data/tables/c3d4-c3d5.ts) | `minWidthM` (headline ≥ 18 m, Class 7/8); confirm any class dependence | ☐ |
-| 5 | **Table C4D4** — opening separation between adjacent compartments | [`src/data/tables/c4d4.ts`](../src/data/tables/c4d4.ts) | `bands: C4D4Band[]` (confirm axes) + `exemptionFrlThreshold` (headline 60/60/60) | ☐ |
-| 6 | **Specification 5 — FRL schedule** by (Type, element) | [`src/data/tables/spec5-frl.ts`](../src/data/tables/spec5-frl.ts) | Every Type×element cell: `FRL { structural, integrity, insulation }` (min; "–" ⇒ null) | ☐ |
-| 7 | **Specification 5 — external-wall FRL by distance** | [`src/data/tables/spec5-extwall.ts`](../src/data/tables/spec5-extwall.ts) | Per Type: `Spec5ExtWallBand[]` (distance bands → FRL + opening treatment) | ☐ |
-| 8 | **Specification 17** — complying-system conditions | [`src/data/tables/spec17.ts`](../src/data/tables/spec17.ts) | `compliesDefinition` (+ FPAA101D/H exclusions for concessions) | ☐ |
+Class **5, 7a, 7b, 8** values are transcribed and confirmed from
+[`ncc-section-c-data-verified.md`](./ncc-section-c-data-verified.md) and shipped
+`verified: true`. The large-isolated concession inputs and Spec 17 are NOT in that
+extract and remain unverified placeholders — any result touching them degrades to
+`insufficient-input` by design.
+
+| # | Value / table | Data file | Status |
+|---|---|---|---|
+| 1 | **Table C2D2** — required Type by rise (Class 5–8) | [`src/data/tables/c2d2.ts`](../src/data/tables/c2d2.ts) | ✅ Verified (5/7a/7b/8) |
+| 2 | **Table C3D3** — max compartment area + volume; grouping {5} vs {7a,7b,8} | [`src/data/tables/c3d3.ts`](../src/data/tables/c3d3.ts) | ✅ Verified (5/7a/7b/8) |
+| 3 | **Table C4D4** — opening separation by angle | [`src/data/tables/c4d4.ts`](../src/data/tables/c4d4.ts) | ✅ Verified |
+| 4 | **Spec 5 — external-wall FRL by distance**; grouping {5,7a} vs {7b,8} | [`src/data/tables/spec5-extwall.ts`](../src/data/tables/spec5-extwall.ts) | ✅ Verified (Types A/B/C) |
+| 5 | **Spec 5 — fixed FRL schedule** (walls/columns/floors/roofs) | [`src/data/tables/spec5-schedule.ts`](../src/data/tables/spec5-schedule.ts) | ✅ Verified (Types A/B/C) |
+| 6 | **C3D4 caps** — large-isolated max area / volume | [`src/data/tables/c3d4-c3d5.ts`](../src/data/tables/c3d4-c3d5.ts) | ☐ **Unverified** — not in extract (headline 18,000 m² / 108,000 m³ — confirm) |
+| 7 | **C3D5(1) open space** — min width around building | [`src/data/tables/c3d4-c3d5.ts`](../src/data/tables/c3d4-c3d5.ts) | ☐ **Unverified** — not in extract (headline ≥ 18 m — confirm) |
+| 8 | **C4D5 exemption FRL threshold** — ≥60/60/60 + protected openings | [`src/data/tables/c4d4.ts`](../src/data/tables/c4d4.ts) | ☐ **Unverified** — not in extract |
+| 9 | **Specification 17** — complying-system conditions | [`src/data/tables/spec17.ts`](../src/data/tables/spec17.ts) | ☐ **Unverified** — not in extract (+ FPAA101D/H exclusions) |
 
 ## Clause references to re-confirm (scaffold §3 `[VERIFY]`)
 

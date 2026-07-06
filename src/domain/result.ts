@@ -1,6 +1,6 @@
 import type {
-  BuildingElement,
   BuildingInput,
+  CompartmentSizeExemption,
   ConstructionType,
   FRL,
 } from "./building.ts";
@@ -144,6 +144,12 @@ export interface CompartmentSizeDetail {
   subdivide?: SubdivideOption;
   /** True when this compartment routes into the C3D4 large-isolated assessment. */
   routedToLargeIsolated: boolean;
+  /**
+   * Set when the C3D3 size check was SKIPPED under a carve-out (sprinklered /
+   * open-deck carpark, open spectator stand — verified extract note 2). The limit
+   * fields stay null because no comparison was made.
+   */
+  sizeExemption?: CompartmentSizeExemption;
 }
 
 /** External-wall FRL required by distance to fire-source feature (Spec 5). */
@@ -174,9 +180,10 @@ export interface SetbackDetail {
   walls: ExternalWallFrlResult[];
 }
 
-/** One line of the FRL schedule (Spec 5), per building element. */
+/** One line of the FRL schedule (Spec 5). */
 export interface FrlScheduleLine {
-  element: BuildingElement;
+  /** Source element/location label, e.g. "Common walls and fire walls". */
+  label: string;
   /** FRL for this element and Type; null until Spec 5 is verified. */
   frl: FRL | null;
   clauseRef: string;

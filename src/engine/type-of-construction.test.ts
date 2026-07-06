@@ -107,10 +107,15 @@ describe("WS-1 edge + safe-degradation paths", () => {
     expect(r.usesUnverifiedData).toBe(false);
   });
 
-  it("degrades to insufficient-input against the real (null) NCC layer", () => {
+  it("computes against the real VERIFIED C2D2 layer (Class 8, rise 4 → A)", () => {
+    // Real Table C2D2: rise ≥ 4 → A, 3 → B, 1–2 → C (differs from the fixture
+    // ladder, which is why fixture tests inject the fixture, not nccData).
     const r = assessTypeOfConstruction({ input: building({ riseInStoreys: 4 }), data: nccData });
-    expect(r.status).toBe("insufficient-input");
-    expect(r.usesUnverifiedData).toBe(true);
-    expect(r.detail.requiredType).toBeNull();
+    expect(r.status).toBe("determined");
+    expect(r.usesUnverifiedData).toBe(false);
+    expect(r.detail.requiredType).toBe("A");
+    // rise 3 → B, rise 2 → C on the real bands.
+    expect(assessTypeOfConstruction({ input: building({ riseInStoreys: 3 }), data: nccData }).detail.requiredType).toBe("B");
+    expect(assessTypeOfConstruction({ input: building({ riseInStoreys: 2 }), data: nccData }).detail.requiredType).toBe("C");
   });
 });
