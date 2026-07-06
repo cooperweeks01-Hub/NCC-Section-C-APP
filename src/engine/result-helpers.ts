@@ -3,6 +3,7 @@ import type {
   CheckName,
   ComplianceResult,
   ResultDetail,
+  ResultStatus,
 } from "../domain/result.ts";
 
 /**
@@ -10,6 +11,39 @@ import type {
  * across every rule and gives Phase B a single, correct way to emit the
  * safe-degradation result.
  */
+
+/**
+ * Build any `ComplianceResult`, attaching optional fields only when provided
+ * (required under `exactOptionalPropertyTypes`). Rules use this for computed
+ * `complies` / `fails` / `determined` results; `insufficientInput` wraps it for
+ * the safe-degradation case.
+ */
+export function complianceResult<TDetail extends ResultDetail>(args: {
+  check: CheckName;
+  status: ResultStatus;
+  detail: TDetail;
+  clauseRef: string;
+  summary: string;
+  inputSnapshot: Partial<BuildingInput>;
+  usesUnverifiedData: boolean;
+  tableRef?: string;
+  pathway?: string;
+  compartmentId?: string;
+}): ComplianceResult<TDetail> {
+  const result: ComplianceResult<TDetail> = {
+    check: args.check,
+    status: args.status,
+    detail: args.detail,
+    clauseRef: args.clauseRef,
+    summary: args.summary,
+    inputSnapshot: args.inputSnapshot,
+    usesUnverifiedData: args.usesUnverifiedData,
+  };
+  if (args.tableRef !== undefined) result.tableRef = args.tableRef;
+  if (args.pathway !== undefined) result.pathway = args.pathway;
+  if (args.compartmentId !== undefined) result.compartmentId = args.compartmentId;
+  return result;
+}
 
 /** Pick a subset of input fields for a result's `inputSnapshot` (traceability). */
 export function snapshotFor(
