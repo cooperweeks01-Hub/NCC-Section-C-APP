@@ -22,9 +22,12 @@ The build follows the orchestration in brief §11:
 - **Phase C — integration + review, single-threaded.** Wire modules, run the full suite,
   one correctness pass over the whole compliance path. Iterate B→C until the DoD is met.
 
-**Status at time of writing:** Phase 0 + Phase A complete. Contracts are frozen and
-typecheck. All NCC table values are `{ value: null, verified: false, source: "… TRANSCRIBE" }`.
-Rules modules exist as signature-locked stubs that safely degrade to `insufficient-input`.
+**Status:** Phases 0 → A → B → C **complete** for Class 5/7a/7b/8. The engine (WS-1–4 +
+orchestrator), persistence (WS-6), PDF (WS-7), and the guided UI (WS-8) are built and
+tested (56 tests green; `tsc` clean; production build OK). C2D2/C3D3/C4D4/Spec 5 are
+verified; the large-isolated concession (C3D4/C3D5) + Spec 17 remain unverified and safely
+degrade. The optional `explain()` layer (WS-9) is intentionally interface-only for v1.
+See [`phase-b-data-model.md`](./phase-b-data-model.md) for the data-driven schema revision.
 
 ---
 
