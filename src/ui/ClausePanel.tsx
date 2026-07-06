@@ -1,3 +1,4 @@
+import type { Compartment } from "../domain/building.ts";
 import type { Assessment } from "../engine/assess.ts";
 import type { AnyComplianceResult } from "../domain/result.ts";
 import { statusColor, statusLabel } from "../format.ts";
@@ -39,9 +40,10 @@ function ResultRow({ r }: { r: AnyComplianceResult }) {
   );
 }
 
-export function ClausePanel({ assessment }: { assessment: Assessment }) {
+export function ClausePanel({ assessment, compartments }: { assessment: Assessment; compartments: Compartment[] }) {
   const { results } = assessment;
   const buildingLevel = results.filter((r) => r.compartmentId === undefined);
+  const nameFor = (cid: string) => compartments.find((c) => c.id === cid)?.name ?? cid.slice(0, 6);
   const compartmentIds = [...new Set(results.map((r) => r.compartmentId).filter((x): x is string => !!x))];
 
   return (
@@ -58,7 +60,7 @@ export function ClausePanel({ assessment }: { assessment: Assessment }) {
           const rows = results.filter((r) => r.compartmentId === cid);
           return (
             <div key={cid} className="mt-2">
-              <h3 className="mt-2 text-[11px] font-bold uppercase tracking-wide text-borg-red">Compartment {cid.slice(0, 6)}</h3>
+              <h3 className="mt-2 text-[11px] font-bold uppercase tracking-wide text-borg-red">{nameFor(cid)}</h3>
               <ul>{rows.map((r, i) => <ResultRow key={`${cid}${i}`} r={r} />)}</ul>
             </div>
           );

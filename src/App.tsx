@@ -106,7 +106,7 @@ export default function App() {
         </main>
 
         <div className="hidden min-h-0 lg:block">
-          <ClausePanel assessment={p.assessment} />
+          <ClausePanel assessment={p.assessment} compartments={p.input.compartments} />
         </div>
       </div>
     </div>
