@@ -1,0 +1,13 @@
+# Static-host config for the NCC Section C tool (Netlify; Vercel/Cloudflare Pages
+# auto-detect Vite with no config). The app is a client-side SPA with NO backend —
+# the PDF is generated in the browser (@react-pdf/renderer), so a static host is
+# all it needs.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Single-page fallback (harmless — the app has one route).
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

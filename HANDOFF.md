@@ -1,102 +1,88 @@
 # Session handoff — NCC Section C tool
 
-_Written 2026-07-07. Temporary handoff for the next Claude Code session. Delete
-once read (it is committed only for durability)._
+_Updated 2026-07-07. Temporary handoff for the next Claude Code session. Delete
+once read (committed only for durability)._
 
 ## TL;DR
 
-**v1 is complete and working** for Class 5, 7a, 7b, 8. The full app — deterministic
-engine, orchestrator, IndexedDB persistence, client-side PDF, and the guided UI —
-is built, committed per phase, and **verified end-to-end in a real browser**.
+A working v1 for **Class 5, 7a, 7b, 8**: deterministic engine, orchestrator,
+IndexedDB persistence, client-side branded PDF, and a guided UI. Built and
+verified in a real browser.
 
-- Branch `master`, HEAD `4448fa1` (13 commits). Working tree clean.
-- `npm test` → **56 tests pass**. `npm run build` → **exit 0** (strict `tsc` + Vite).
-- Browser-verified (Edge): walked the workflow, forced a C3D3 exceedance → C3D4
-  routing, DRAFT banner, and a valid PDF download via the browser `toBlob()` path.
+- Branch `main`, working tree clean. `npm test` → **76 pass**. `npm run build` → **exit 0**.
+- Local-first, **no backend** — the PDF is generated in the browser.
 
-## What exists (architecture map)
+## Features (current)
 
-- `src/domain/` — frozen contracts: `NccValue<T>`, `BuildingInput` (+ `InScopeClass`,
-  `isInScope`), `ComplianceResult<TDetail>` with concrete detail types + the
-  `determined` status, `ProjectState`, disclaimer constants.
-- `src/data/` — **verified** NCC layer (Class 5/7a/7b/8): C2D2, C3D3, C4D4, Spec 5
-  (external-wall-by-distance + fixed schedule). `__fixtures__/synthetic-data-layer.ts`
-  is SYNTHETIC test data (verified caps the real layer lacks) — never copy into real.
-- `src/engine/` — pure `RuleFn` modules (type-of-construction, compartment-size,
-  large-isolated, setback-separation, frl-schedule) + `assess.ts` orchestrator
-  (`assessProject`). Each has its own `*.test.ts`; `assess.test.ts` holds the three
-  brief-§9 worked examples + the sprinkler-gating test.
-- `src/persistence/` — `IndexedDbProjectStore` implements the frozen `ProjectStore`
-  (save/load/list/delete + JSON export/import + validation).
-- `src/pdf/report.tsx` — branded `@react-pdf/renderer` report (lazy-loaded).
-- `src/state/` + `src/ui/` + `src/App.tsx` — single-derived-assessment app, guided
-  workflow, persistent clause panel, DRAFT banner, autosave.
-- `src/llm/explain.ts` — Explainer interface + disabled default (OFF for v1, by request).
+- **Classification** — direct class pick + a "Not sure" NCC Part A6 questionnaire
+  (use → class, dominant/ancillary rule). Can't advance until a class is chosen.
+- **Rise in storeys** — info tooltip with the C2D3 storey definition.
+- **Compartment size (C3D3)** — per compartment; carve-out (C3D2(1): sprinklered/
+  open-deck carpark, open spectator stand) skips the size check.
+- **Large-isolated concession (C3D4/C3D5)** — two pathways: A open space (C3D5(1),
+  capped, Class 7/8 ≤2 storeys) OR B sprinklers + perimeter access (C3D5(2), NO
+  size cap). Lives at the bottom of the Compartments step; shows only the pathways
+  actually available for the entered size.
+- **Construction-type escalation** — when a compartment exceeds its Type's C3D3
+  limit, offers "upgrade to Type B/A" if a higher Type fits; recomputes the whole
+  assessment; PDF logs the C→B→A trial.
+- **Per-compartment class (fire-separated multi-class)** — each compartment
+  assessed against its OWN class's C3D3 + Spec 5; FRL schedule per distinct class;
+  the questionnaire preloads two fire-separated parts as per-class compartments.
+- **C3D4(c)** — advisory flag (verify-only, NOT computed): parts < 6 m apart may be
+  one building; open-space/access extends to the whole group. (Whether fire-
+  separated parts are "separate buildings" is a surveyor judgement.)
+- **Setback / external-wall FRL (Spec 5)** + C4D4 opening separation by angle.
+- **PDF** — branded, clause-referenced, per-compartment, DRAFT banner logic,
+  disclaimer; lazy-loaded so initial JS is ~200 kB.
 
-## Data status: fully verified for the covered scope
+## Data status (all verified for the covered scope)
 
-Verified (`verified: true`): **C2D2, C3D3, C4D4, Spec 5, and C3D4 caps / C3D5
-geometry** (caps 18,000 m² / 108,000 m³; open space ≥ 18 m; perimeter access
-≥ 6 m within 18 m). So the large-isolated concession now **computes** end-to-end;
-it only reports `insufficient-input` when the designer hasn't yet answered the
-concession questions — and that carries `usesUnverifiedData: false`, so **no DRAFT
-banner** for a normal in-scope assessment.
+C2D2, C3D3, C4D4, Spec 5, C3D4 caps (18,000 m²/108,000 m³), C3D5 geometry (18 m;
+6 m/18 m) are `verified:true`. Only the C4D5 exemption threshold and Spec 17 text
+remain placeholders and gate nothing — so a normal in-scope assessment shows no
+DRAFT banner.
 
-Still placeholders (do NOT gate anything): the **C4D5 exemption FRL threshold**
-(the setback opening-separation exemption isn't computed — `exemptionApplies`
-stays null with a cite-and-verify note) and **Specification 17's complying-conditions
-text** (unused — the sprinkler pathway trusts the designer's yes/no).
+## Architecture
 
-**Large-isolated has TWO independent pathways (get this right):** the 18,000 /
-108,000 caps bound ONLY pathway A (open space, C3D5(1), Class 7/8 + ≤ 2 storeys).
-Pathway B (sprinklers to Spec 17 + perimeter access, C3D5(2)) has **no size cap** —
-that is what lets a large building qualify. See `src/engine/large-isolated.ts`.
+- `src/domain/` frozen contracts · `src/data/` verified NCC layer (+ `__fixtures__`
+  synthetic test data) · `src/engine/` pure rules + `assess.ts` orchestrator ·
+  `src/persistence/` IndexedDB ProjectStore · `src/pdf/` report · `src/ui/`+`state/`
+  workflow · `src/llm/` disabled Explainer interface.
+- Deterministic engine is the whole compliance path; every result carries a
+  clause/table ref. No LLM in the path. See `docs/phase-b-data-model.md`.
 
-## Next steps / open items
-
-1. **Optional remaining data/logic (not blocking).** The C4D5 opening-separation
-   exemption is cited but not computed (would need both its FRL threshold in
-   `c4d4.ts` and a small setback-rule addition). Spec 17's text is unused. Neither
-   affects current results. See `docs/verification-checklist.md`.
-2. **Off-machine backup — still unresolved.** No git remote is configured; all 13
-   commits are local only. Pushing to GitHub is the backup story (left for the user
-   to authorise — it's outward-facing).
-3. **Old C:\ OneDrive copy — contents deleted** (`…/OneDrive/Desktop/Claude/
-   NCC Section C APP`). The empty folder node may still linger if OneDrive held a
-   lock; remove the empty folder manually if so.
-4. **Branch:** all Phase B/C work is on `master`. Move to a feature branch if preferred.
-
-## Known limitations to preserve/decide (not bugs)
-
-- The C3D4 sprinkler / open-space inputs appear in **Step 2** only once a Step-3
-  compartment triggers routing — a first linear pass needs a step-back. Fine while
-  the concession degrades anyway; relocate to the results view if desired.
-- **Part A6 use-based classification questionnaire is NOT built** — direct class
-  picker only (in-scope classes + an out-of-scope notice). Future add.
-- Out of scope by design: Performance Solutions; Classes 1–4, 6, 9, 10; egress
-  checker; Revit reader; cloud/multi-user (Azure phase); the LLM `explain()` layer.
-
-## Design rules to keep (do not violate)
-
-- **No fabricated NCC values — ever.** Missing/unverified ⇒ `insufficient-input`,
-  never a plausible number. `usesUnverifiedData` drives the DRAFT banner.
-- **Per-table class grouping is deliberate** (7a groups with 5 for Spec 5, with
-  7b/8 for C3D3 — separate enums + mappers). See `docs/phase-b-data-model.md`.
-- **No LLM in the compliance path.** Every pass/fail is a pure function of typed
-  inputs + the data layer, and carries a clause/table reference.
-- The less-onerous Type analysis **re-looks-up C2D2 at reduced rise** — never a
-  C→B→A brute force.
-
-## Run it
+## Run / build
 
 ```bash
 npm install
-npm run dev        # Vite dev server
-npm run test       # 56 tests
-npm run build      # strict tsc + production build
+npm run dev      # dev server
+npm run test     # 76 tests
+npm run build    # tsc --noEmit + vite build → dist/
 ```
 
-Orientation docs: `docs/brief.md` (source brief), `docs/plan.md` (workstreams +
-Definition of Done), `docs/phase-b-data-model.md` (the data-driven schema
-revision), `docs/ncc-section-c-data-verified.md` (the source of truth for values),
-`docs/verification-checklist.md` (what's verified vs pending).
+## Deployment (in progress — see the session where this was written)
+
+- **No backend needed.** The build in `dist/` is a static SPA; the PDF is
+  client-side. Any static host works (Netlify / Vercel / Cloudflare Pages /
+  GitHub Pages). `netlify.toml` is committed for one-click Netlify.
+- **GitHub:** no remote yet, `gh` CLI not installed. To push: create an empty
+  GitHub repo, `git remote add origin <url>`, `git push -u origin main`.
+- **GitHub Pages caveat:** a *project* Pages site serves under `/<repo>/`, so set
+  `base: '/<repo>/'` in `vite.config.ts` before building for Pages. Netlify/Vercel
+  serve at the root — no base change needed.
+
+## Design rules to keep
+
+No fabricated NCC values (missing ⇒ insufficient-input). Per-table class grouping
+(C3D3 {5}/{7a,7b,8}; Spec 5 {5,7a}/{7b,8}). No LLM in the compliance path. C2D2 is
+uniform across 5–8 so construction type is building-wide — a class-specific C2D2
+would need per-class Type handling (commented in `assess.ts`).
+
+## Known follow-ups / limitations
+
+- Part A6 questionnaire is indicative; classification is always the certifier's call.
+- Field labels wrap the Segmented/Toggle buttons, so those buttons inherit the
+  question as their accessible name (works; minor a11y polish).
+- C4D5 opening-separation exemption is cited but not computed.
+- Off-machine backup = pushing to GitHub (see Deployment).
