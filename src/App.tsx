@@ -26,6 +26,9 @@ export default function App() {
   const p = useProject();
   const [step, setStep] = useState<StepKey>("classify");
   const [pdfBusy, setPdfBusy] = useState(false);
+  // Gate: the user must ACTIVELY choose a class on the Classify step (direct picker
+  // or questionnaire) before they can advance past it — the default class is not a choice.
+  const [classChosen, setClassChosen] = useState(false);
 
   const stepIndex = STEPS.findIndex((s) => s.key === step);
   const go = (delta: number) => {
@@ -73,20 +76,24 @@ export default function App() {
       <div className="grid flex-1 grid-cols-1 lg:grid-cols-[1fr_22rem]">
         <main className="flex min-h-0 flex-col">
           <nav className="flex gap-1 border-b border-borg-line bg-white px-6 py-2">
-            {STEPS.map((sdef, i) => (
-              <button
-                key={sdef.key}
-                onClick={() => setStep(sdef.key)}
-                className={`rounded px-3 py-1.5 text-sm font-medium ${sdef.key === step ? "bg-borg-red text-white" : i <= stepIndex ? "text-borg-charcoal hover:bg-borg-mist" : "text-borg-slate hover:bg-borg-mist"}`}
-              >
-                {sdef.label}
-              </button>
-            ))}
+            {STEPS.map((sdef, i) => {
+              const blocked = step === "classify" && !classChosen && i > stepIndex;
+              return (
+                <button
+                  key={sdef.key}
+                  onClick={() => { if (!blocked) setStep(sdef.key); }}
+                  disabled={blocked}
+                  className={`rounded px-3 py-1.5 text-sm font-medium ${sdef.key === step ? "bg-borg-red text-white" : blocked ? "cursor-not-allowed text-borg-slate/40" : i <= stepIndex ? "text-borg-charcoal hover:bg-borg-mist" : "text-borg-slate hover:bg-borg-mist"}`}
+                >
+                  {sdef.label}
+                </button>
+              );
+            })}
           </nav>
 
           <div className="flex-1 overflow-y-auto px-6 py-6">
             <div className="mx-auto max-w-4xl">
-              {step === "classify" && <ClassifyStep p={p} />}
+              {step === "classify" && <ClassifyStep p={p} classChosen={classChosen} setClassChosen={setClassChosen} />}
               {step === "building" && <BuildingStep p={p} />}
               {step === "compartments" && <CompartmentsStep p={p} />}
               {step === "review" && <ReviewStep p={p} onDownloadPdf={onDownloadPdf} />}
@@ -98,6 +105,10 @@ export default function App() {
             <span className="text-xs text-borg-slate">{pdfBusy ? "Generating PDF…" : `Step ${stepIndex + 1} of ${STEPS.length}`}</span>
             {step === "review" ? (
               <Button variant="primary" onClick={onDownloadPdf}>Download PDF</Button>
+            ) : step === "classify" && !classChosen ? (
+              <button type="button" disabled title="Choose a building class to continue" className="cursor-not-allowed rounded bg-borg-red/40 px-3 py-1.5 text-sm font-medium text-white">
+                Next →
+              </button>
             ) : (
               <Button variant="primary" onClick={() => go(1)}>Next →</Button>
             )}
