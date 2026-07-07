@@ -6,10 +6,12 @@ once read (committed only for durability)._
 ## TL;DR
 
 A working v1 for **Class 5, 7a, 7b, 8**: deterministic engine, orchestrator,
-IndexedDB persistence, client-side branded PDF, and a guided UI. Built and
-verified in a real browser.
+IndexedDB persistence, client-side branded PDF, and a guided UI. Built, verified
+in a real browser, and **deployed live**.
 
 - Branch `main`, working tree clean. `npm test` → **76 pass**. `npm run build` → **exit 0**.
+- **Live:** https://ncc-section-c-app.cooperweeks01.workers.dev/ (Cloudflare; auto-deploys on push).
+- On GitHub: `cooperweeks01-Hub/NCC-Section-C-APP`.
 - Local-first, **no backend** — the PDF is generated in the browser.
 
 ## Features (current)
@@ -61,16 +63,18 @@ npm run test     # 76 tests
 npm run build    # tsc --noEmit + vite build → dist/
 ```
 
-## Deployment (in progress — see the session where this was written)
+## Deployment — DONE (live)
 
-- **No backend needed.** The build in `dist/` is a static SPA; the PDF is
-  client-side. Any static host works (Netlify / Vercel / Cloudflare Pages /
-  GitHub Pages). `netlify.toml` is committed for one-click Netlify.
-- **GitHub:** no remote yet, `gh` CLI not installed. To push: create an empty
-  GitHub repo, `git remote add origin <url>`, `git push -u origin main`.
-- **GitHub Pages caveat:** a *project* Pages site serves under `/<repo>/`, so set
-  `base: '/<repo>/'` in `vite.config.ts` before building for Pages. Netlify/Vercel
-  serve at the root — no base change needed.
+- **Live demo:** https://ncc-section-c-app.cooperweeks01.workers.dev/ — verified
+  end-to-end (renders, workflow, PDF download, zero console errors).
+- **Host:** Cloudflare **Workers static assets** — `wrangler.toml` serves `./dist`
+  (no Worker script; the PDF and everything is client-side). Build `npm run build`,
+  deploy `npx wrangler deploy`.
+- **Auto-deploy:** Cloudflare is connected to the GitHub repo, so **every push to
+  `main` rebuilds and redeploys**. Manual redeploy: `npm run build && npx wrangler deploy`.
+- `netlify.toml` is also committed (alternative host). A GitHub *Pages* project
+  site would need `base: '/<repo>/'` in `vite.config.ts`; Cloudflare/Netlify serve
+  at the root, so no base change is needed.
 
 ## Design rules to keep
 
