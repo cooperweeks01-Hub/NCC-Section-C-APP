@@ -1,0 +1,10 @@
+# Cloudflare Workers "static assets" deploy for this Vite SPA.
+# `npx wrangler deploy` reads this, uploads ./dist as static assets, and serves
+# the site (no Worker script needed — the PDF and everything is client-side).
+name = "ncc-section-c-app"
+compatibility_date = "2024-11-01"
+
+[assets]
+directory = "./dist"
+# Serve index.html for any unknown path (the app is a single page).
+not_found_handling = "single-page-application"
