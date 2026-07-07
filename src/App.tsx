@@ -3,7 +3,10 @@ import { DISCLAIMER, DRAFT_BANNER } from "./domain/disclaimer.ts";
 import { useProject } from "./state/project.ts";
 import { ClausePanel } from "./ui/ClausePanel.tsx";
 import { Button } from "./ui/controls.tsx";
-import { BuildingStep, ClassifyStep, CompartmentsStep, ReviewStep } from "./ui/steps.tsx";
+import { ClassifyStep } from "./ui/ClassifyStep.tsx";
+import { BuildingStep } from "./ui/BuildingStep.tsx";
+import { CompartmentsStep } from "./ui/CompartmentsStep.tsx";
+import { ReviewStep } from "./ui/ReviewStep.tsx";
 
 /**
  * WS-8 · the guided §6 workflow. A linear, step-back-and-forth flow around a
