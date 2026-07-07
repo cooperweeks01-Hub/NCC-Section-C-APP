@@ -40,7 +40,8 @@ function inp(cls: BuildingInput["buildingClass"], walls: ExternalWall[]): { inpu
     effectiveHeightM: 12,
     sprinkleredToSpec17: null,
     openSpaceAroundBuildingM: null,
-    perimeterVehicularAccess: null,
+    perimeterAccess6mWide: null,
+    perimeterAccessWithin18m: null,
     compartments: [compartment],
     fireWallsSeparateCompartments: false,
   };

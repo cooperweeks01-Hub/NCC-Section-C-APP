@@ -14,7 +14,8 @@ function inp(cls: BuildingInput["buildingClass"]): BuildingInput {
     effectiveHeightM: 12,
     sprinkleredToSpec17: null,
     openSpaceAroundBuildingM: null,
-    perimeterVehicularAccess: null,
+    perimeterAccess6mWide: null,
+    perimeterAccessWithin18m: null,
     compartments: [],
     fireWallsSeparateCompartments: false,
   };

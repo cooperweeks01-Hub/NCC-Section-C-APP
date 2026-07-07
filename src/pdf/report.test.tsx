@@ -18,7 +18,8 @@ const input: BuildingInput = {
   effectiveHeightM: 30, // > 25 ⇒ E1D5 flag included
   sprinkleredToSpec17: null,
   openSpaceAroundBuildingM: null,
-  perimeterVehicularAccess: null,
+  perimeterAccess6mWide: null,
+  perimeterAccessWithin18m: null,
   compartments: [
     { id: "c1", name: "Warehouse", floorAreaM2: 5000, volumeM3: 25000, sizeExemption: null, externalWalls: [{ id: "w1", name: "North", distanceToFireSourceFeatureM: 6, loadbearing: true, hasOpenings: true, angleToAdjacentOpeningDeg: 90 }] },
   ],

@@ -2,6 +2,7 @@ import { useRef } from "react";
 import type { ReactNode } from "react";
 import type { BuildingClass, CompartmentSizeExemption } from "../domain/building.ts";
 import { BUILDING_CLASSES, IN_SCOPE_CLASSES, isInScope } from "../domain/building.ts";
+import { nccData } from "../data/index.ts";
 import type { UseProject } from "../state/project.ts";
 import { Button, Field, NumberInput, Segmented, Select, TextInput, TriToggle } from "./controls.tsx";
 import { ResultsView } from "./ResultsView.tsx";
@@ -33,6 +34,9 @@ export function ClassifyStep({ p }: { p: UseProject }) {
 /** Step 2 — building-level inputs; C3D4 concession inputs appear at the decision point. */
 export function BuildingStep({ p }: { p: UseProject }) {
   const routed = p.assessment.results.some((r) => r.check === "LargeIsolated");
+  const openSpaceMin = nccData.c3d5.openSpaceMinWidthM.value ?? 18;
+  const accessWidth = nccData.c3d5.perimeterAccessMinWidthM.value ?? 6;
+  const accessDist = nccData.c3d5.perimeterAccessMaxDistanceM.value ?? 18;
   return (
     <div className="space-y-4">
       <Intro title="Building" text="Rise in storeys drives the Type (Table C2D2). Effective height is kept separate — > 25 m triggers the sprinkler flag (E1D5)." />
@@ -47,11 +51,22 @@ export function BuildingStep({ p }: { p: UseProject }) {
       {routed ? (
         <div className="rounded border border-borg-red/40 bg-borg-red/5 p-4">
           <h3 className="text-sm font-semibold text-borg-charcoal">C3D4 large-isolated concession — decision point</h3>
-          <p className="mt-1 text-xs text-borg-slate">A compartment exceeds its C3D3 limit. Whether the building is/can be sprinklered to Specification 17 is the biggest lever here (brief §6.4).</p>
-          <div className="mt-3 grid max-w-xl grid-cols-1 gap-4">
-            <Field label="Sprinklered to Specification 17?"><TriToggle value={p.input.sprinkleredToSpec17} onChange={(v) => p.setInput({ sprinkleredToSpec17: v })} /></Field>
-            <Field label="Open space width around building (m)" hint="C3D5(1)"><div className="max-w-[12rem]"><NumberInput value={p.input.openSpaceAroundBuildingM} min={0} onChange={(v) => p.setInput({ openSpaceAroundBuildingM: v })} /></div></Field>
-            <Field label="Perimeter vehicular access?" hint="C3D5(2)"><TriToggle value={p.input.perimeterVehicularAccess} onChange={(v) => p.setInput({ perimeterVehicularAccess: v })} /></Field>
+          <p className="mt-1 text-xs text-borg-slate">A compartment exceeds its C3D3 limit. It can still qualify by <strong>either</strong> pathway — open space (C3D5(1), capped) <strong>or</strong> sprinklers + perimeter access (C3D5(2), no size limit).</p>
+          <div className="mt-3 grid max-w-2xl grid-cols-1 gap-4">
+            <Field label={`Pathway A — open space width around the building (m)`} hint={`C3D5(1) · needs ≥ ${openSpaceMin} m; Class 7/8, ≤ 2 storeys, within caps`}>
+              <div className="max-w-[12rem]"><NumberInput value={p.input.openSpaceAroundBuildingM} min={0} onChange={(v) => p.setInput({ openSpaceAroundBuildingM: v })} /></div>
+            </Field>
+            <Field label="Pathway B — sprinklered throughout to Specification 17?" hint="C3D5(2) · no size limit">
+              <TriToggle value={p.input.sprinkleredToSpec17} onChange={(v) => p.setInput({ sprinkleredToSpec17: v })} />
+            </Field>
+            <Field label={`Is there continuous, unobstructed, not-built-upon vehicle access ≥ ${accessWidth} m wide around the building?`} hint="C3D5(2)">
+              <TriToggle value={p.input.perimeterAccess6mWide} onChange={(v) => p.setInput(v === true ? { perimeterAccess6mWide: v } : { perimeterAccess6mWide: v, perimeterAccessWithin18m: null })} />
+            </Field>
+            {p.input.perimeterAccess6mWide === true && (
+              <Field label={`Is that access within ${accessDist} m of the building (its far side ≤ ${accessDist} m)?`} hint="C3D5(2)">
+                <TriToggle value={p.input.perimeterAccessWithin18m} onChange={(v) => p.setInput({ perimeterAccessWithin18m: v })} />
+              </Field>
+            )}
           </div>
         </div>
       ) : (

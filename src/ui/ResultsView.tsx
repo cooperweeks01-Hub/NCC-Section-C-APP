@@ -60,7 +60,7 @@ function Detail({ r }: { r: AnyComplianceResult }) {
       const d = r.detail as LargeIsolatedDetail;
       return (
         <div className="text-sm text-borg-slate">
-          <p>Eligible: {d.eligible === null ? "—" : d.eligible ? "yes" : "no"} (caps {d.areaCapM2 ?? "—"} m² / {d.volumeCapM3 ?? "—"} m³).</p>
+          <p>Within C3D4 caps: {d.eligible === null ? "—" : d.eligible ? "yes" : "no"} (caps {d.areaCapM2 ?? "—"} m² / {d.volumeCapM3 ?? "—"} m³ — bounds pathway A only).</p>
           <p>• {d.pathwayA.clauseRef}: {d.pathwayA.satisfied === null ? "?" : d.pathwayA.satisfied ? "satisfied" : "not satisfied"}{d.pathwayA.missing ? ` — ${d.pathwayA.missing}` : ""}</p>
           <p>• {d.pathwayB.clauseRef}: {d.pathwayB.satisfied === null ? "?" : d.pathwayB.satisfied ? "satisfied" : "not satisfied"}{d.pathwayB.missing ? ` — ${d.pathwayB.missing}` : ""}</p>
         </div>

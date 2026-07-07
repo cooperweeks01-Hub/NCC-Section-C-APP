@@ -17,7 +17,7 @@ import type {
   C2D2Table,
   C3D3Table,
   C3D4Caps,
-  C3D5OpenSpace,
+  C3D5Requirements,
   C4D4Table,
   NccDataLayer,
   Spec5ExtWallElement,
@@ -62,8 +62,10 @@ const c3d4Caps: C3D4Caps = {
   maxFloorAreaM2: verified(20000, `${SRC} — C3D4 area cap`),
   maxVolumeM3: verified(120000, `${SRC} — C3D4 volume cap`),
 };
-const c3d5OpenSpace: C3D5OpenSpace = {
-  minWidthM: verified(15, `${SRC} — C3D5(1) open-space width`),
+const c3d5: C3D5Requirements = {
+  openSpaceMinWidthM: verified(15, `${SRC} — C3D5(1) open-space width`),
+  perimeterAccessMinWidthM: verified(6, `${SRC} — C3D5(2) access width`),
+  perimeterAccessMaxDistanceM: verified(18, `${SRC} — C3D5(2) access distance`),
 };
 const spec17: Spec17Conditions = {
   compliesDefinition: verified(
@@ -138,7 +140,7 @@ export const syntheticDataLayer: NccDataLayer = {
   c2d2,
   c3d3,
   c3d4Caps,
-  c3d5OpenSpace,
+  c3d5,
   c4d4,
   spec5ExtWall,
   spec5Schedule,

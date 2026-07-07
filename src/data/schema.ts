@@ -62,8 +62,9 @@ export interface C3D3Cell {
 export type C3D3Table = Record<C3D3ClassGroup, Record<ConstructionType, C3D3Cell>>;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// C3D4 — large-isolated caps. NOT in the verified extract — stays unverified
-// (never fabricate the 18,000/108,000 headline). Concession safely-degrades.
+// C3D4 — large-isolated caps. These bound ONLY the open-space pathway (C3D5(1));
+// the sprinkler pathway (C3D5(2)) has no size limit — that is precisely what lets
+// a building exceed them.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface C3D4Caps {
@@ -71,9 +72,18 @@ export interface C3D4Caps {
   maxVolumeM3: NccValue<number>;
 }
 
-/** C3D5(1) open-space geometry. Also not in the extract — stays unverified. */
-export interface C3D5OpenSpace {
-  minWidthM: NccValue<number>;
+/**
+ * C3D5 geometry thresholds for the two large-isolated pathways.
+ *  - C3D5(1): open space ≥ `openSpaceMinWidthM` around the building (pathway A).
+ *  - C3D5(2): continuous, unobstructed, not-built-upon vehicle access
+ *    ≥ `perimeterAccessMinWidthM` wide whose far side is ≤ `perimeterAccessMaxDistanceM`
+ *    from the building (pathway B). These two feed the wording of the yes/no
+ *    questions the designer answers — the decision is theirs, the thresholds are ours.
+ */
+export interface C3D5Requirements {
+  openSpaceMinWidthM: NccValue<number>;
+  perimeterAccessMinWidthM: NccValue<number>;
+  perimeterAccessMaxDistanceM: NccValue<number>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -173,7 +183,7 @@ export interface NccDataLayer {
   c2d2: C2D2Table;
   c3d3: C3D3Table;
   c3d4Caps: C3D4Caps;
-  c3d5OpenSpace: C3D5OpenSpace;
+  c3d5: C3D5Requirements;
   c4d4: C4D4Table;
   spec5ExtWall: Spec5ExtWallTable;
   spec5Schedule: Spec5ScheduleTable;

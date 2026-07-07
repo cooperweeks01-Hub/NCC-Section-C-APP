@@ -1,33 +1,24 @@
-import { placeholder } from "../../domain/ncc-value.ts";
-import type { C3D4Caps, C3D5OpenSpace } from "../schema.ts";
+import { verified } from "../../domain/ncc-value.ts";
+import type { C3D4Caps, C3D5Requirements } from "../schema.ts";
 
 /**
- * C3D4 — large-isolated-building concession caps.
+ * C3D4 large-isolated caps + C3D5 geometry thresholds.
  *
- * PLACEHOLDER (Phase 0): the brief and scaffold both state the headline caps as
- * 18,000 m² floor area / 108,000 m³ volume "confirm". Per the no-fabrication rule
- * (brief §9) those figures are NOT copied in as live values — the concession only
- * applies while `floorArea ≤ cap AND volume ≤ cap`, and computing against an
- * untrusted cap could wrongly grant the concession. Values stay null until a
- * competent person transcribes them; the headline appears only as a hint.
+ * VERIFIED (confirmed with the competent person against NCC 2022 Vol One):
+ *  - C3D4 caps: 18,000 m² floor area / 108,000 m³ volume. These bound ONLY the
+ *    open-space pathway (C3D5(1)); the sprinkler pathway (C3D5(2)) has NO size
+ *    limit and is what allows a building to exceed them.
+ *  - C3D5(1): open space ≥ 18 m wide around the building.
+ *  - C3D5(2): continuous, unobstructed, not-built-upon vehicle access ≥ 6 m wide
+ *    whose far side is ≤ 18 m from the building.
  */
 export const c3d4Caps: C3D4Caps = {
-  maxFloorAreaM2: placeholder<number>(
-    "C3D4, NCC 2022 Vol One — large-isolated max floor area (headline 18,000 m²) — TRANSCRIBE + CONFIRM",
-  ),
-  maxVolumeM3: placeholder<number>(
-    "C3D4, NCC 2022 Vol One — large-isolated max volume (headline 108,000 m³) — TRANSCRIBE + CONFIRM",
-  ),
+  maxFloorAreaM2: verified<number>(18000, "C3D4, NCC 2022 Vol One — large-isolated max floor area — verified"),
+  maxVolumeM3: verified<number>(108000, "C3D4, NCC 2022 Vol One — large-isolated max volume — verified"),
 };
 
-/**
- * C3D5(1) — open-space geometry for the large-isolated open-space pathway.
- *
- * PLACEHOLDER: headline is ≥ 18 m around the building for Class 7/8. The exact
- * width and any class dependence must be transcribed/confirmed.
- */
-export const c3d5OpenSpace: C3D5OpenSpace = {
-  minWidthM: placeholder<number>(
-    "C3D5(1), NCC 2022 Vol One — min open-space width around building (headline ≥ 18 m, Class 7/8) — TRANSCRIBE + CONFIRM",
-  ),
+export const c3d5: C3D5Requirements = {
+  openSpaceMinWidthM: verified<number>(18, "C3D5(1), NCC 2022 Vol One — min open-space width around building — verified"),
+  perimeterAccessMinWidthM: verified<number>(6, "C3D5(2), NCC 2022 Vol One — min perimeter vehicle-access width — verified"),
+  perimeterAccessMaxDistanceM: verified<number>(18, "C3D5(2), NCC 2022 Vol One — max distance of access far side from building — verified"),
 };

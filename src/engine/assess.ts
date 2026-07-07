@@ -65,7 +65,7 @@ export function assessProject(input: BuildingInput, data: NccDataLayer): Assessm
 
 /** §6.9 knock-on flags — flag + cite only, never computed. */
 function knockOnFlags(input: BuildingInput): ComplianceResult<FlagDetail>[] {
-  const snapshot = { effectiveHeightM: input.effectiveHeightM, perimeterVehicularAccess: input.perimeterVehicularAccess };
+  const snapshot = { effectiveHeightM: input.effectiveHeightM, perimeterAccess6mWide: input.perimeterAccess6mWide };
   const flags: ComplianceResult<FlagDetail>[] = [];
 
   if (input.effectiveHeightM > 25) {
@@ -86,7 +86,7 @@ function knockOnFlags(input: BuildingInput): ComplianceResult<FlagDetail>[] {
     );
   }
 
-  if (input.perimeterVehicularAccess === true) {
+  if (input.perimeterAccess6mWide === true) {
     flags.push(
       complianceResult<FlagDetail>({
         check: "KnockOnFlag",

@@ -66,6 +66,9 @@ function Cite({ result }: { result: AnyComplianceResult }) {
 /** Column widths reused for FRL-ish tables. */
 const col = (w: string | number) => ({ width: w } as const);
 
+/** Render a nullable boolean input for the snapshot. */
+const yn = (v: boolean | null): string => (v === null ? "not answered" : v ? "yes" : "no");
+
 function TypeDetailView({ d }: { d: TypeOfConstructionDetail }) {
   if (d.levers.length === 0) return <Text style={s.td}>Required Type: {d.requiredType ?? "—"}. No less-onerous option from reducing rise.</Text>;
   return (
@@ -96,7 +99,7 @@ function CompartmentSizeView({ d }: { d: CompartmentSizeDetail }) {
 function LargeIsolatedView({ d }: { d: LargeIsolatedDetail }) {
   return (
     <View>
-      <Text style={s.td}>Eligible: {d.eligible === null ? "—" : d.eligible ? "yes" : "no"} (caps {d.areaCapM2 ?? "—"} m² / {d.volumeCapM3 ?? "—"} m³ vs {d.floorAreaM2} m² / {d.volumeM3} m³).</Text>
+      <Text style={s.td}>Within C3D4 caps (pathway A only): {d.eligible === null ? "—" : d.eligible ? "yes" : "no"} — caps {d.areaCapM2 ?? "—"} m² / {d.volumeCapM3 ?? "—"} m³ vs {d.floorAreaM2} m² / {d.volumeM3} m³.</Text>
       <Text style={s.td}>• {d.pathwayA.clauseRef}: {d.pathwayA.satisfied === null ? "?" : d.pathwayA.satisfied ? "satisfied" : "not satisfied"}{d.pathwayA.missing ? ` — ${d.pathwayA.missing}` : ""}</Text>
       <Text style={s.td}>• {d.pathwayB.clauseRef}: {d.pathwayB.satisfied === null ? "?" : d.pathwayB.satisfied ? "satisfied" : "not satisfied"}{d.pathwayB.missing ? ` — ${d.pathwayB.missing}` : ""}</Text>
     </View>
@@ -233,8 +236,9 @@ export function ComplianceReport({ project }: { project: ProjectState }) {
           <View style={s.metaCell}><Text style={s.metaLabel}>Rise in storeys</Text><Text>{input.riseInStoreys}</Text></View>
           <View style={s.metaCell}><Text style={s.metaLabel}>Effective height (m)</Text><Text>{input.effectiveHeightM}</Text></View>
           <View style={s.metaCell}><Text style={s.metaLabel}>Fire walls separate compartments</Text><Text>{input.fireWallsSeparateCompartments ? "yes" : "no"}</Text></View>
-          <View style={s.metaCell}><Text style={s.metaLabel}>Sprinklered to Spec 17</Text><Text>{input.sprinkleredToSpec17 === null ? "not answered" : input.sprinkleredToSpec17 ? "yes" : "no"}</Text></View>
-          <View style={s.metaCell}><Text style={s.metaLabel}>Open space (m) / perimeter access</Text><Text>{input.openSpaceAroundBuildingM ?? "—"} / {input.perimeterVehicularAccess === null ? "—" : input.perimeterVehicularAccess ? "yes" : "no"}</Text></View>
+          <View style={s.metaCell}><Text style={s.metaLabel}>Sprinklered to Spec 17</Text><Text>{yn(input.sprinkleredToSpec17)}</Text></View>
+          <View style={s.metaCell}><Text style={s.metaLabel}>Open space (m)</Text><Text>{input.openSpaceAroundBuildingM ?? "—"}</Text></View>
+          <View style={s.metaCell}><Text style={s.metaLabel}>Perimeter access ≥6 m / within 18 m</Text><Text>{yn(input.perimeterAccess6mWide)} / {yn(input.perimeterAccessWithin18m)}</Text></View>
         </View>
 
         <Text style={s.sectionTitle}>Building-level results</Text>

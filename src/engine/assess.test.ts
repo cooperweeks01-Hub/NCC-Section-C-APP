@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { BuildingInput, Compartment, ExternalWall } from "../domain/building.ts";
 import { nccData } from "../data/index.ts";
-import { syntheticDataLayer } from "../data/__fixtures__/synthetic-data-layer.ts";
 import { assessProject } from "./assess.ts";
 
 /**
@@ -23,7 +22,8 @@ function project(overrides: Partial<BuildingInput> = {}): BuildingInput {
     effectiveHeightM: 8,
     sprinkleredToSpec17: null,
     openSpaceAroundBuildingM: null,
-    perimeterVehicularAccess: null,
+    perimeterAccess6mWide: null,
+    perimeterAccessWithin18m: null,
     compartments: [comp()],
     fireWallsSeparateCompartments: false,
     ...overrides,
@@ -31,23 +31,31 @@ function project(overrides: Partial<BuildingInput> = {}): BuildingInput {
 }
 
 describe("WORKED EXAMPLE 1 — Type C Class 8 over-compartment routes through C3D4", () => {
-  it("size fails and a LargeIsolated result appears (degraded on real unverified caps)", () => {
+  it("size fails and routes to C3D4; unanswered concession ⇒ insufficient-input, no DRAFT", () => {
     const input = project({ buildingClass: "8", riseInStoreys: 1, compartments: [comp({ floorAreaM2: 5000, volumeM3: 25000 })] });
     const { requiredType, results } = assessProject(input, nccData);
     expect(requiredType).toBe("C");
-    const size = results.find((r) => r.check === "CompartmentSize")!;
-    expect(size.status).toBe("fails");
+    expect(results.find((r) => r.check === "CompartmentSize")!.status).toBe("fails");
     const li = results.find((r) => r.check === "LargeIsolated");
-    expect(li).toBeDefined(); // routed → the sprinkler question surfaces here
-    expect(li!.status).toBe("insufficient-input"); // real C3D4 caps unverified
+    expect(li).toBeDefined(); // routed → the C3D4 question surfaces here
+    expect(li!.status).toBe("insufficient-input"); // caps verified; questions unanswered
+    expect(li!.usesUnverifiedData).toBe(false);
   });
 
-  it("on the fixture (verified caps) the C3D4 open-space pathway resolves end-to-end", () => {
-    const input = project({ buildingClass: "8", riseInStoreys: 1, openSpaceAroundBuildingM: 20, compartments: [comp({ floorAreaM2: 5000, volumeM3: 25000 })] });
-    const { results } = assessProject(input, syntheticDataLayer);
+  it("a large OVER-CAPS building resolves via the sprinkler pathway (C3D5(2)) end-to-end", () => {
+    // 25,000 m² is over the 18,000 m² cap — only pathway B can save it.
+    const input = project({
+      buildingClass: "8",
+      riseInStoreys: 1,
+      sprinkleredToSpec17: true,
+      perimeterAccess6mWide: true,
+      perimeterAccessWithin18m: true,
+      compartments: [comp({ floorAreaM2: 25000, volumeM3: 130000 })],
+    });
+    const { results } = assessProject(input, nccData);
     const li = results.find((r) => r.check === "LargeIsolated")!;
     expect(li.status).toBe("complies");
-    expect(li.pathway).toMatch(/open space/i);
+    expect(li.pathway).toMatch(/C3D5\(2\)/);
   });
 });
 

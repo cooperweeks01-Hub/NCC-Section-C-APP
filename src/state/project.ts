@@ -58,7 +58,8 @@ export function emptyInput(): BuildingInput {
     effectiveHeightM: 8,
     sprinkleredToSpec17: null,
     openSpaceAroundBuildingM: null,
-    perimeterVehicularAccess: null,
+    perimeterAccess6mWide: null,
+    perimeterAccessWithin18m: null,
     compartments: [newCompartment(1)],
     fireWallsSeparateCompartments: false,
   };

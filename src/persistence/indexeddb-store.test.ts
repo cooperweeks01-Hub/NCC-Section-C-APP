@@ -17,7 +17,8 @@ const input: BuildingInput = {
   effectiveHeightM: 8,
   sprinkleredToSpec17: null,
   openSpaceAroundBuildingM: null,
-  perimeterVehicularAccess: null,
+  perimeterAccess6mWide: null,
+  perimeterAccessWithin18m: null,
   compartments: [{ id: "c1", name: "C1", floorAreaM2: 5000, volumeM3: 25000, sizeExemption: null, externalWalls: [] }],
   fireWallsSeparateCompartments: false,
 };
@@ -48,16 +49,21 @@ describe("WS-6 IndexedDB CRUD round-trip", () => {
     expect(await freshStore().load("nope")).toBeNull();
   });
 
-  it("list returns summaries carrying the DRAFT flag; delete removes", async () => {
+  it("list summaries carry the DRAFT flag both ways; delete removes", async () => {
     const store = freshStore();
-    await store.save(sampleProject("a"));
-    await store.save(sampleProject("b"));
+    // A normal project on the fully-verified layer uses no unverified values.
+    await store.save(sampleProject("clean"));
+    // Inject a result that used unverified data ⇒ the summary DRAFT flag is true.
+    const draft = sampleProject("draft");
+    draft.results = [...draft.results, { ...draft.results[0]!, usesUnverifiedData: true }];
+    await store.save(draft);
+
     const list = await store.list();
-    expect(list.map((s) => s.id).sort()).toEqual(["a", "b"]);
-    // The sample routes to the unverified C3D4 concession ⇒ uses unverified data.
-    expect(list.every((s) => s.usesUnverifiedData)).toBe(true);
-    await store.delete("a");
-    expect((await store.list()).map((s) => s.id)).toEqual(["b"]);
+    expect(list.map((s) => s.id).sort()).toEqual(["clean", "draft"]);
+    expect(list.find((s) => s.id === "clean")!.usesUnverifiedData).toBe(false);
+    expect(list.find((s) => s.id === "draft")!.usesUnverifiedData).toBe(true);
+    await store.delete("clean");
+    expect((await store.list()).map((s) => s.id)).toEqual(["draft"]);
   });
 });
 

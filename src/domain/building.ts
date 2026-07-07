@@ -115,10 +115,10 @@ export interface Compartment {
 /**
  * The full set of building inputs for one project.
  *
- * `sprinkleredToSpec17`, `openSpaceAroundBuildingM`, and `perimeterVehicularAccess`
- * are nullable because they are asked at the C3D4 decision point, not upfront
- * (brief §6.4). `null` means "not yet answered" — the engine must treat that as
- * `insufficient-input`, never as `false`.
+ * `sprinkleredToSpec17`, `openSpaceAroundBuildingM`, and the two
+ * `perimeterAccess…` fields are nullable because they are asked at the C3D4
+ * decision point, not upfront (brief §6.4). `null` means "not yet answered" — the
+ * engine must treat that as `insufficient-input`, never as `false`.
  */
 export interface BuildingInput {
   buildingClass: BuildingClass;
@@ -130,12 +130,22 @@ export interface BuildingInput {
    * Section C computation.
    */
   effectiveHeightM: number;
-  /** Sprinklered to Specification 17? Asked at the C3D4 decision point. */
+  /** Sprinklered throughout to Specification 17? C3D4 decision point (pathway B). */
   sprinkleredToSpec17: boolean | null;
-  /** Open space width (m) available around the building, for C3D5(1). */
+  /** Open space width (m) available around the building, for C3D5(1) (pathway A). */
   openSpaceAroundBuildingM: number | null;
-  /** Perimeter vehicular access available, for C3D5(2). */
-  perimeterVehicularAccess: boolean | null;
+  /**
+   * C3D5(2) pathway B, question 1: is there continuous, unobstructed,
+   * not-built-upon vehicle access ≥ 6 m wide around the building? `null` = not
+   * yet answered (treated as insufficient-input, never as `false`).
+   */
+  perimeterAccess6mWide: boolean | null;
+  /**
+   * C3D5(2) pathway B, question 2: is that access within 18 m of the building
+   * (its far side ≤ 18 m from the building)? Only meaningful when the first is
+   * yes; `null` = not yet answered.
+   */
+  perimeterAccessWithin18m: boolean | null;
   /** One or more fire compartments; length > 1 => multi-compartment. */
   compartments: Compartment[];
   /** Does a fire wall genuinely separate the building into >1 compartment? */

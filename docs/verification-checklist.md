@@ -45,10 +45,10 @@ extract and remain unverified placeholders — any result touching them degrades
 | 3 | **Table C4D4** — opening separation by angle | [`src/data/tables/c4d4.ts`](../src/data/tables/c4d4.ts) | ✅ Verified |
 | 4 | **Spec 5 — external-wall FRL by distance**; grouping {5,7a} vs {7b,8} | [`src/data/tables/spec5-extwall.ts`](../src/data/tables/spec5-extwall.ts) | ✅ Verified (Types A/B/C) |
 | 5 | **Spec 5 — fixed FRL schedule** (walls/columns/floors/roofs) | [`src/data/tables/spec5-schedule.ts`](../src/data/tables/spec5-schedule.ts) | ✅ Verified (Types A/B/C) |
-| 6 | **C3D4 caps** — large-isolated max area / volume | [`src/data/tables/c3d4-c3d5.ts`](../src/data/tables/c3d4-c3d5.ts) | ☐ **Unverified** — not in extract (headline 18,000 m² / 108,000 m³ — confirm) |
-| 7 | **C3D5(1) open space** — min width around building | [`src/data/tables/c3d4-c3d5.ts`](../src/data/tables/c3d4-c3d5.ts) | ☐ **Unverified** — not in extract (headline ≥ 18 m — confirm) |
-| 8 | **C4D5 exemption FRL threshold** — ≥60/60/60 + protected openings | [`src/data/tables/c4d4.ts`](../src/data/tables/c4d4.ts) | ☐ **Unverified** — not in extract |
-| 9 | **Specification 17** — complying-system conditions | [`src/data/tables/spec17.ts`](../src/data/tables/spec17.ts) | ☐ **Unverified** — not in extract (+ FPAA101D/H exclusions) |
+| 6 | **C3D4 caps** — large-isolated max area / volume (18,000 m² / 108,000 m³; bound pathway A only) | [`src/data/tables/c3d4-c3d5.ts`](../src/data/tables/c3d4-c3d5.ts) | ✅ Verified |
+| 7 | **C3D5(1) / C3D5(2) geometry** — open space ≥ 18 m; perimeter access ≥ 6 m within 18 m | [`src/data/tables/c3d4-c3d5.ts`](../src/data/tables/c3d4-c3d5.ts) | ✅ Verified |
+| 8 | **C4D5 exemption FRL threshold** — ≥60/60/60 + protected openings | [`src/data/tables/c4d4.ts`](../src/data/tables/c4d4.ts) | ☐ **Unverified** — not in extract (exemption not yet computed) |
+| 9 | **Specification 17** — complying-system conditions | [`src/data/tables/spec17.ts`](../src/data/tables/spec17.ts) | ☐ Placeholder — **not consulted** by any decision (sprinkler status is a designer yes/no) |
 
 ## Clause references to re-confirm (scaffold §3 `[VERIFY]`)
 

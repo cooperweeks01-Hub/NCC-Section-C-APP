@@ -33,25 +33,31 @@ is built, committed per phase, and **verified end-to-end in a real browser**.
   workflow, persistent clause panel, DRAFT banner, autosave.
 - `src/llm/explain.ts` — Explainer interface + disabled default (OFF for v1, by request).
 
-## The one thing to understand: verified vs unverified data
+## Data status: fully verified for the covered scope
 
-Verified (`verified: true`): **C2D2, C3D3, C4D4, Spec 5**.
-NOT in the verified extract → still `null`/unverified, **safely degrades** (never
-fabricated): **C3D4 large-isolated caps, C3D5 open-space width, C4D5 exemption
-threshold, Specification 17**.
+Verified (`verified: true`): **C2D2, C3D3, C4D4, Spec 5, and C3D4 caps / C3D5
+geometry** (caps 18,000 m² / 108,000 m³; open space ≥ 18 m; perimeter access
+≥ 6 m within 18 m). So the large-isolated concession now **computes** end-to-end;
+it only reports `insufficient-input` when the designer hasn't yet answered the
+concession questions — and that carries `usesUnverifiedData: false`, so **no DRAFT
+banner** for a normal in-scope assessment.
 
-Consequence: on real data, any compartment that exceeds C3D3 routes to the
-large-isolated concession, which then returns `insufficient-input` (DRAFT) until
-those caps are transcribed. **This is by design, not a bug.** The synthetic fixture
-carries invented caps so the concession's branch logic is fully tested.
+Still placeholders (do NOT gate anything): the **C4D5 exemption FRL threshold**
+(the setback opening-separation exemption isn't computed — `exemptionApplies`
+stays null with a cite-and-verify note) and **Specification 17's complying-conditions
+text** (unused — the sprinkler pathway trusts the designer's yes/no).
+
+**Large-isolated has TWO independent pathways (get this right):** the 18,000 /
+108,000 caps bound ONLY pathway A (open space, C3D5(1), Class 7/8 + ≤ 2 storeys).
+Pathway B (sprinklers to Spec 17 + perimeter access, C3D5(2)) has **no size cap** —
+that is what lets a large building qualify. See `src/engine/large-isolated.ts`.
 
 ## Next steps / open items
 
-1. **Fill the remaining data (pure data step, no code change).** Transcribe C3D4
-   caps, C3D5(1) width, C4D5 threshold, and Spec 17 into `src/data/tables/`
-   (`c3d4-c3d5.ts`, `c4d4.ts`, `spec17.ts`) and flip `verified: true`. The
-   large-isolated result then computes and the DRAFT banner clears itself. See
-   `docs/verification-checklist.md`.
+1. **Optional remaining data/logic (not blocking).** The C4D5 opening-separation
+   exemption is cited but not computed (would need both its FRL threshold in
+   `c4d4.ts` and a small setback-rule addition). Spec 17's text is unused. Neither
+   affects current results. See `docs/verification-checklist.md`.
 2. **Off-machine backup — still unresolved.** No git remote is configured; all 13
    commits are local only. Pushing to GitHub is the backup story (left for the user
    to authorise — it's outward-facing).

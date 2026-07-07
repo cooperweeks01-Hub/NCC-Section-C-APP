@@ -10,11 +10,12 @@
 Present (VERIFIED): Table C2D2, Table C3D3, Table C4D4, Specification 5 FRLs for
 Types A/B/C (external-wall-by-distance **and** the fixed element schedule).
 
-Absent (stays `verified:false`/null — never fabricated): **C3D4 large-isolated
-caps** (18,000 m²/108,000 m³), **C3D5(1) open-space width**, **Spec 17**. So the
-large-isolated concession still safely-degrades to `insufficient-input` on the
-REAL layer; its branch logic is proven only against the synthetic fixture (which
-carries invented, verified caps). This is correct, not a gap.
+Absent from the original extract: the C3D4/C3D5 concession values. **These were
+subsequently confirmed** (caps 18,000 m² / 108,000 m³; C3D5(1) open space ≥ 18 m;
+C3D5(2) perimeter access ≥ 6 m within 18 m) and the large-isolated rule now
+computes end-to-end via TWO pathways — the caps bound only pathway A; pathway B
+(sprinklers + C3D5(2)) has no size cap. Only the C4D5 exemption threshold and
+Spec 17's text remain placeholders, and neither gates any decision.
 
 ## Constraint 1 — class grouping differs per table (do NOT share one enum)
 
