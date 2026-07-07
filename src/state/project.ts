@@ -62,6 +62,7 @@ export function emptyInput(): BuildingInput {
     perimeterAccessWithin18m: null,
     compartments: [newCompartment(1)],
     fireWallsSeparateCompartments: false,
+    constructionTypeOverride: null,
   };
 }
 

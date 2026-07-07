@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { BuildingInput, Compartment, ExternalWall } from "../domain/building.ts";
+import type { TypeOfConstructionDetail } from "../domain/result.ts";
 import { nccData } from "../data/index.ts";
 import { assessProject } from "./assess.ts";
 
@@ -100,6 +101,48 @@ describe("WORKED EXAMPLE 3 — setback / external-wall FRL flows through the orc
     const setback = results.find((r) => r.check === "SetbackSeparation")!;
     expect(setback.status).toBe("determined");
     expect(setback.detail).toMatchObject({ walls: [{ requiredExtWallFrl: { structural: 240, integrity: 180, insulation: 90 }, clauseRef: "S5C11a" }] });
+  });
+});
+
+describe("construction-type escalation (Type C → B → A)", () => {
+  const typeDetail = (input: ReturnType<typeof project>) =>
+    assessProject(input, nccData).results.find((r) => r.check === "TypeOfConstruction")!.detail as TypeOfConstructionDetail;
+
+  it("suggests upgrading Type when a higher Type's C3D3 limit would fit (4,000 m² Class 8: C✗ B✗ A✓)", () => {
+    // Class 8 rise 1 → required min C. Type C limit 2000, B 3500, A 5000 (m²).
+    const input = project({ buildingClass: "8", riseInStoreys: 1, compartments: [comp({ floorAreaM2: 4000, volumeM3: 20000 })] });
+    const d = typeDetail(input);
+    expect(d.requiredType).toBe("C");
+    expect(d.typeTrials?.map((t) => [t.type, t.allCompartmentsFit])).toEqual([["C", false], ["B", false], ["A", true]]);
+    expect(d.sizeUpgradeSuggestion).toBe("A");
+  });
+
+  it("applying the upgrade recomputes the whole assessment at the new Type", () => {
+    const input = project({ buildingClass: "8", riseInStoreys: 1, constructionTypeOverride: "A", compartments: [comp({ floorAreaM2: 4000, volumeM3: 20000 })] });
+    const { effectiveType, results } = assessProject(input, nccData);
+    expect(effectiveType).toBe("A");
+    // Now within the Type A limit ⇒ complies, and NOT routed to the concession.
+    expect(results.find((r) => r.check === "CompartmentSize")!.status).toBe("complies");
+    expect(results.some((r) => r.check === "LargeIsolated")).toBe(false);
+    // FRL schedule + type detail reflect the upgraded Type.
+    expect((results.find((r) => r.check === "FrlSchedule")!.detail as { type: string }).type).toBe("A");
+    expect(typeDetail(input).overriddenTo).toBe("A");
+  });
+
+  it("offers NO upgrade when even Type A can't fit (over-caps compartment) — concession only", () => {
+    const input = project({ buildingClass: "8", riseInStoreys: 1, compartments: [comp({ floorAreaM2: 25000, volumeM3: 130000 })] });
+    const d = typeDetail(input);
+    expect(d.sizeUpgradeSuggestion).toBeNull();
+    expect(d.typeTrials?.every((t) => !t.allCompartmentsFit)).toBe(true);
+    expect(assessProject(input, nccData).results.some((r) => r.check === "LargeIsolated")).toBe(true);
+  });
+
+  it("ignores an override that is LESS onerous than the required minimum", () => {
+    // Rise 5 → required min A; a 'C' override must be ignored (can't build less onerous).
+    const input = project({ buildingClass: "8", riseInStoreys: 5, constructionTypeOverride: "C", compartments: [comp({ floorAreaM2: 1000, volumeM3: 5000 })] });
+    const { effectiveType } = assessProject(input, nccData);
+    expect(effectiveType).toBe("A");
+    expect(typeDetail(input).overriddenTo).toBeNull();
   });
 });
 

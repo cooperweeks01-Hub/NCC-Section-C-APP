@@ -150,4 +150,11 @@ export interface BuildingInput {
   compartments: Compartment[];
   /** Does a fire wall genuinely separate the building into >1 compartment? */
   fireWallsSeparateCompartments: boolean;
+  /**
+   * A voluntary upgrade of the construction Type above the C2D2 minimum, to permit
+   * a larger C3D3 compartment (a non-sprinkler alternative to the large-isolated
+   * concession). Building-wide. `null`/absent = build to the required minimum. The
+   * engine ignores an override that is LESS onerous than the required minimum.
+   */
+  constructionTypeOverride?: ConstructionType | null;
 }

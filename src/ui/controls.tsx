@@ -74,6 +74,9 @@ export function NumberInput({ value, onChange, min, step }: { value: number | nu
       value={value ?? ""}
       min={min}
       step={step ?? "any"}
+      // Select the whole value on focus so typing replaces it — otherwise editing a
+      // field showing "0" (or an existing figure) prepends the new digits.
+      onFocus={(e) => e.currentTarget.select()}
       onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
     />
   );

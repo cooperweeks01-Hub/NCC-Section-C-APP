@@ -80,9 +80,12 @@ export const assessCompartmentSize: RuleFn<CompartmentSizeDetail> = (ctx) => {
       check: "CompartmentSize",
       status: "complies",
       detail: { ...baseDetail, sizeExemption: c.sizeExemption },
-      clauseRef: "C3D5(1)",
+      // C3D2(1) "Application of Part" — C3D3/C3D4/C3D5 do not apply to a sprinklered
+      // carpark (Spec 17, not FPAA101D/H), an open-deck carpark, or an open
+      // spectator stand.
+      clauseRef: "C3D2(1)",
       tableRef: "Table C3D3",
-      summary: `Compartment "${c.name}" is exempt from the C3D3 size limit (${label[c.sizeExemption]}) — size check not applicable.`,
+      summary: `Compartment "${c.name}" is exempt from the C3D3 size limit under C3D2(1) (${label[c.sizeExemption]}) — size check not applicable.`,
       inputSnapshot,
       usesUnverifiedData: false,
       ...(compartmentId ? { compartmentId } : {}),

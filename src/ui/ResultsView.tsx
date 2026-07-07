@@ -35,9 +35,15 @@ function Detail({ r }: { r: AnyComplianceResult }) {
   switch (r.check) {
     case "TypeOfConstruction": {
       const d = r.detail as TypeOfConstructionDetail;
+      const upgraded = d.effectiveType && d.effectiveType !== d.requiredType;
       return (
         <div className="text-sm text-borg-slate">
-          <p>Required minimum Type: <strong className="text-borg-charcoal">{d.requiredType ?? "—"}</strong> (rise {d.riseInStoreys}).</p>
+          <p>Required minimum Type (C2D2): <strong className="text-borg-charcoal">{d.requiredType ?? "—"}</strong> (rise {d.riseInStoreys}).</p>
+          {upgraded && <p>Assessed at <strong className="text-borg-charcoal">Type {d.effectiveType}</strong> — construction upgraded to permit a larger C3D3 compartment.</p>}
+          {d.typeTrials && d.typeTrials.length > 1 && (
+            <p className="mt-1">Type trial: {d.typeTrials.map((t) => `Type ${t.type} ${t.allCompartmentsFit ? "✓" : "✗"}`).join(" · ")}</p>
+          )}
+          {d.sizeUpgradeSuggestion && <p className="mt-1">Option: upgrade construction to <strong className="text-borg-charcoal">Type {d.sizeUpgradeSuggestion}</strong> to fit all compartments without the concession.</p>}
           {d.levers.length > 0 && (
             <ul className="mt-1 list-disc pl-5">
               {d.levers.map((l, i) => <li key={i}>{l.lever} → {l.resultingType ?? "verify"} <span className="text-borg-slate/70">({l.clauseRef})</span></li>)}

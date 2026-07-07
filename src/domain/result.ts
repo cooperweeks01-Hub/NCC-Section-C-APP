@@ -65,6 +65,14 @@ export interface TypeLever {
   note?: string;
 }
 
+/** One row of the construction-type escalation trial (Type C → B → A). */
+export interface TypeTrial {
+  type: ConstructionType;
+  /** Do all non-exempt compartments fit their C3D3 limit at this Type? */
+  allCompartmentsFit: boolean;
+  note: string;
+}
+
 /** Detail for the Type-of-construction check (Table C2D2). */
 export interface TypeOfConstructionDetail {
   /** Minimum required Type from Table C2D2 for (Class, rise). Null if unverified. */
@@ -76,6 +84,20 @@ export interface TypeOfConstructionDetail {
    * ad-hoc C→B→A brute force (brief §6.3 correctness directive).
    */
   levers: TypeLever[];
+  // ── Escalation fields (set by the orchestrator, which sees all compartments +
+  //    the user's voluntary upgrade). C2D2 gives the MINIMUM Type; a designer may
+  //    build a more-onerous Type to permit a larger C3D3 compartment. ──────────
+  /** The Type the building is actually assessed at (≥ requiredType). */
+  effectiveType?: ConstructionType | null;
+  /** The Type the user voluntarily upgraded to (more onerous than required), or null. */
+  overriddenTo?: ConstructionType | null;
+  /**
+   * When the effective Type does NOT fit all compartments: the least more-onerous
+   * Type that would (a non-sprinkler alternative to the C3D4 concession), or null.
+   */
+  sizeUpgradeSuggestion?: ConstructionType | null;
+  /** The C→B→A trial log (from the required minimum upward), for the report. */
+  typeTrials?: TypeTrial[];
 }
 
 /** A computed subdivision option when a compartment exceeds Table C3D3. */

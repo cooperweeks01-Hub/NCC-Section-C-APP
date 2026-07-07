@@ -70,13 +70,32 @@ const col = (w: string | number) => ({ width: w } as const);
 const yn = (v: boolean | null): string => (v === null ? "not answered" : v ? "yes" : "no");
 
 function TypeDetailView({ d }: { d: TypeOfConstructionDetail }) {
-  if (d.levers.length === 0) return <Text style={s.td}>Required Type: {d.requiredType ?? "—"}. No less-onerous option from reducing rise.</Text>;
+  const upgraded = d.effectiveType && d.effectiveType !== d.requiredType;
   return (
     <View>
-      <Text style={s.td}>Required minimum Type: {d.requiredType ?? "—"} (rise {d.riseInStoreys}). Less-onerous options:</Text>
-      {d.levers.map((l, i) => (
-        <Text key={i} style={s.td}>• {l.lever} → {l.resultingType ?? "verify"} ({l.clauseRef})</Text>
-      ))}
+      <Text style={s.td}>Required minimum Type (C2D2): {d.requiredType ?? "—"} (rise {d.riseInStoreys}).</Text>
+      {upgraded && (
+        <Text style={s.td}>Assessed at Type {d.effectiveType} — construction upgraded to permit a larger C3D3 compartment.</Text>
+      )}
+      {d.typeTrials && d.typeTrials.length > 1 && (
+        <View>
+          <Text style={s.td}>Construction-type trial (compartment size):</Text>
+          {d.typeTrials.map((t, i) => (
+            <Text key={i} style={s.td}>• Type {t.type}: {t.allCompartmentsFit ? "all compartments fit" : "a compartment exceeds the limit"}.</Text>
+          ))}
+        </View>
+      )}
+      {d.sizeUpgradeSuggestion && (
+        <Text style={s.td}>Option: upgrade construction to Type {d.sizeUpgradeSuggestion} to fit all compartments without the C3D4 concession.</Text>
+      )}
+      {d.levers.length > 0 && (
+        <View>
+          <Text style={s.td}>Less-onerous options (reduce rise):</Text>
+          {d.levers.map((l, i) => (
+            <Text key={i} style={s.td}>• {l.lever} → {l.resultingType ?? "verify"} ({l.clauseRef})</Text>
+          ))}
+        </View>
+      )}
     </View>
   );
 }

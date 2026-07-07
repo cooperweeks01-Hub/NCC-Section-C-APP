@@ -84,7 +84,7 @@ describe("WS-2 carpark carve-out (verified extract note 2)", () => {
     // No comparison was made — limits stay null, never the 2,000 m² Type C limit.
     expect(r.detail.maxFloorAreaM2).toBeNull();
     expect(r.detail.routedToLargeIsolated).toBe(false);
-    expect(r.clauseRef).toBe("C3D5(1)");
+    expect(r.clauseRef).toBe("C3D2(1)");
   });
 });
 
