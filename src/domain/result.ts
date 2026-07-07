@@ -1,4 +1,5 @@
 import type {
+  BuildingClass,
   BuildingInput,
   CompartmentSizeExemption,
   ConstructionType,
@@ -216,6 +217,11 @@ export interface FrlScheduleLine {
 export interface FrlScheduleDetail {
   /** Null when upstream type of construction is unverified — never defaulted (brief §9). */
   type: ConstructionType | null;
+  /**
+   * The class this schedule is for. In a multi-class building there is one FRL
+   * schedule per distinct class, so this distinguishes otherwise-identical cards.
+   */
+  assessedClass?: BuildingClass;
   lines: FrlScheduleLine[];
 }
 

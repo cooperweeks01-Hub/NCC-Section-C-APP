@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { BuildingInput, Compartment, ExternalWall } from "../domain/building.ts";
-import type { TypeOfConstructionDetail } from "../domain/result.ts";
+import type { FrlScheduleDetail, TypeOfConstructionDetail } from "../domain/result.ts";
 import { nccData } from "../data/index.ts";
 import { assessProject } from "./assess.ts";
 
@@ -143,6 +143,46 @@ describe("construction-type escalation (Type C → B → A)", () => {
     const { effectiveType } = assessProject(input, nccData);
     expect(effectiveType).toBe("A");
     expect(typeDetail(input).overriddenTo).toBeNull();
+  });
+});
+
+describe("per-compartment class (fire-separated multi-class building)", () => {
+  it("assesses each compartment against its OWN class — Class 5 fits where Class 7b fails", () => {
+    // 2,500 m²: within the Class 5 Type C limit (3,000) but over the Class 7b limit (2,000).
+    const c5 = comp({ id: "office", name: "Office", buildingClass: "5", floorAreaM2: 2500, volumeM3: 10000 });
+    const c7b = comp({ id: "store", name: "Warehouse", buildingClass: "7b", floorAreaM2: 2500, volumeM3: 10000 });
+    const input = project({ buildingClass: "5", riseInStoreys: 1, fireWallsSeparateCompartments: true, compartments: [c5, c7b] });
+    const { results } = assessProject(input, nccData);
+    expect(results.find((r) => r.check === "CompartmentSize" && r.compartmentId === "office")!.status).toBe("complies");
+    expect(results.find((r) => r.check === "CompartmentSize" && r.compartmentId === "store")!.status).toBe("fails");
+  });
+
+  it("produces one FRL schedule per distinct class", () => {
+    const c5 = comp({ id: "office", buildingClass: "5", floorAreaM2: 1000, volumeM3: 5000 });
+    const c7b = comp({ id: "store", buildingClass: "7b", floorAreaM2: 1000, volumeM3: 5000 });
+    const input = project({ buildingClass: "5", riseInStoreys: 1, fireWallsSeparateCompartments: true, compartments: [c5, c7b] });
+    const frls = assessProject(input, nccData).results.filter((r) => r.check === "FrlSchedule");
+    expect(frls.map((r) => (r.detail as FrlScheduleDetail).assessedClass).sort()).toEqual(["5", "7b"]);
+  });
+
+  it("a single-class building still yields exactly one FRL schedule", () => {
+    const frls = assessProject(project({ buildingClass: "8", riseInStoreys: 1 }), nccData).results.filter((r) => r.check === "FrlSchedule");
+    expect(frls).toHaveLength(1);
+  });
+
+  it("flags C3D4(c) (6 m / one-building) when the concession is used in a multi-part building — as a verify-only note", () => {
+    const big = comp({ id: "store", floorAreaM2: 25000, volumeM3: 130000 }); // over caps ⇒ routed
+    const small = comp({ id: "office", floorAreaM2: 1000, volumeM3: 5000 });
+    const input = project({ buildingClass: "8", riseInStoreys: 1, fireWallsSeparateCompartments: true, compartments: [big, small] });
+    const flag = assessProject(input, nccData).results.find((r) => r.check === "KnockOnFlag" && r.clauseRef === "C3D4(c)");
+    expect(flag).toBeDefined();
+    expect(flag!.status).toBe("flag");
+    expect(flag!.summary).toMatch(/verify/i); // consideration, not an assertion
+  });
+
+  it("does NOT flag C3D4(c) for a single-compartment building", () => {
+    const input = project({ buildingClass: "8", riseInStoreys: 1, compartments: [comp({ floorAreaM2: 25000, volumeM3: 130000 })] });
+    expect(assessProject(input, nccData).results.some((r) => r.clauseRef === "C3D4(c)")).toBe(false);
   });
 });
 

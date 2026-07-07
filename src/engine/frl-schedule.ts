@@ -21,14 +21,15 @@ import type { RuleFn } from "./types.ts";
  */
 export const assessFrlSchedule: RuleFn<FrlScheduleDetail> = (ctx) => {
   const { input, requiredType } = ctx;
+  const assessClass = ctx.assessClass ?? input.buildingClass;
   const inputSnapshot = snapshotFor(input, "buildingClass", "riseInStoreys");
 
-  if (!isInScope(input.buildingClass)) {
+  if (!isInScope(assessClass)) {
     return insufficientInput({
       check: "FrlSchedule",
       clauseRef: "Spec 5",
       detail: { type: null, lines: [] },
-      summary: `Class ${input.buildingClass} is out of scope — FRL schedule not produced.`,
+      summary: `Class ${assessClass} is out of scope — FRL schedule not produced.`,
       inputSnapshot,
       usesUnverifiedData: false,
     });
@@ -38,14 +39,14 @@ export const assessFrlSchedule: RuleFn<FrlScheduleDetail> = (ctx) => {
     return insufficientInput({
       check: "FrlSchedule",
       clauseRef: "Spec 5",
-      detail: { type: null, lines: [] },
+      detail: { type: null, assessedClass: assessClass, lines: [] },
       summary: "FRL schedule cannot be produced: the required Type of construction is not yet determined.",
       inputSnapshot,
       usesUnverifiedData: false,
     });
   }
 
-  const sourceLines = ctx.data.spec5Schedule[requiredType][frlGroupFor(input.buildingClass)];
+  const sourceLines = ctx.data.spec5Schedule[requiredType][frlGroupFor(assessClass)];
   const lines: FrlScheduleLine[] = sourceLines.map((l) => {
     const usable = isUsable(l.frl);
     return {
@@ -57,7 +58,7 @@ export const assessFrlSchedule: RuleFn<FrlScheduleDetail> = (ctx) => {
   });
 
   const anyUnverified = lines.some((l) => l.usesUnverifiedData);
-  const detail: FrlScheduleDetail = { type: requiredType, lines };
+  const detail: FrlScheduleDetail = { type: requiredType, assessedClass: assessClass, lines };
 
   if (anyUnverified) {
     return insufficientInput({
@@ -74,7 +75,7 @@ export const assessFrlSchedule: RuleFn<FrlScheduleDetail> = (ctx) => {
     status: "determined",
     detail,
     clauseRef: "Spec 5",
-    summary: `Specification 5 FRL schedule for Type ${requiredType} (${lines.length} elements). External-wall FRLs are distance-dependent — see the setback result.`,
+    summary: `Specification 5 FRL schedule for Type ${requiredType}, Class ${assessClass} (${lines.length} elements). External-wall FRLs are distance-dependent — see the setback result.`,
     inputSnapshot,
     usesUnverifiedData: false,
   });

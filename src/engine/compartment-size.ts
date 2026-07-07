@@ -52,8 +52,12 @@ export const assessCompartmentSize: RuleFn<CompartmentSizeDetail> = (ctx) => {
     routedToLargeIsolated: false,
   };
 
+  // The class to assess against — the compartment's own class in a multi-class
+  // building, else the building class.
+  const assessClass = c?.buildingClass ?? ctx.assessClass ?? input.buildingClass;
+
   // Missing compartment / out-of-scope class ⇒ cannot assess (not a data problem).
-  if (!c || !isInScope(input.buildingClass)) {
+  if (!c || !isInScope(assessClass)) {
     return insufficientInput({
       check: "CompartmentSize",
       clauseRef: "C3D3",
@@ -61,13 +65,13 @@ export const assessCompartmentSize: RuleFn<CompartmentSizeDetail> = (ctx) => {
       detail: baseDetail,
       summary: !c
         ? "Compartment size cannot be assessed: no compartment supplied."
-        : `Class ${input.buildingClass} is out of scope — compartment size not assessed.`,
+        : `Class ${assessClass} is out of scope — compartment size not assessed.`,
       inputSnapshot,
       usesUnverifiedData: false,
       ...(compartmentId ? { compartmentId } : {}),
     });
   }
-  const cls = input.buildingClass; // narrowed to InScopeClass by isInScope
+  const cls = assessClass; // narrowed to InScopeClass by isInScope
 
   // Carve-out (note 2): size check does not apply — skip C3D3 entirely.
   if (c.sizeExemption !== null) {

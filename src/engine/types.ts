@@ -1,4 +1,5 @@
 import type {
+  BuildingClass,
   BuildingInput,
   Compartment,
   ConstructionType,
@@ -29,6 +30,12 @@ export interface RuleContext {
    * unverified; omitted when not applicable.
    */
   requiredType?: ConstructionType | null;
+  /**
+   * The class to assess this rule against — the compartment's own class in a
+   * fire-separated multi-class building. Omitted ⇒ the rule uses
+   * `input.buildingClass`. Only class-keyed rules (size, setback, FRL) read it.
+   */
+  assessClass?: BuildingClass;
 }
 
 /** A single deterministic rule: pure, typed in, traceable result out. */

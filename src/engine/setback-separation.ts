@@ -98,7 +98,8 @@ export const assessSetbackSeparation: RuleFn<SetbackDetail> = (ctx) => {
     clauseRef: "Spec 5",
   }));
 
-  if (!c || !isInScope(input.buildingClass)) {
+  const assessClass = c?.buildingClass ?? ctx.assessClass ?? input.buildingClass;
+  if (!c || !isInScope(assessClass)) {
     return insufficientInput({
       check: "SetbackSeparation",
       clauseRef: "Spec 5",
@@ -106,13 +107,13 @@ export const assessSetbackSeparation: RuleFn<SetbackDetail> = (ctx) => {
       detail: { walls: stubWalls },
       summary: !c
         ? "Setback cannot be assessed: no compartment supplied."
-        : `Class ${input.buildingClass} is out of scope — setback not assessed.`,
+        : `Class ${assessClass} is out of scope — setback not assessed.`,
       inputSnapshot,
       usesUnverifiedData: false,
       ...(compartmentId ? { compartmentId } : {}),
     });
   }
-  const cls = input.buildingClass; // InScopeClass
+  const cls = assessClass; // InScopeClass
 
   if (requiredType == null) {
     return insufficientInput({

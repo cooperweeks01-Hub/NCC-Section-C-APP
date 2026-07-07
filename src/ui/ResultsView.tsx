@@ -96,7 +96,7 @@ function Detail({ r }: { r: AnyComplianceResult }) {
       const d = r.detail as FrlScheduleDetail;
       return (
         <table className="mt-1 w-full text-sm">
-          <thead><tr className="text-left text-xs text-borg-slate"><th className="py-1">Element (Type {d.type ?? "—"})</th><th>FRL</th><th>Clause</th></tr></thead>
+          <thead><tr className="text-left text-xs text-borg-slate"><th className="py-1">Element (Type {d.type ?? "—"}{d.assessedClass ? `, Class ${d.assessedClass}` : ""})</th><th>FRL</th><th>Clause</th></tr></thead>
           <tbody>
             {d.lines.map((l, i) => (
               <tr key={i} className="border-t border-borg-line text-borg-charcoal">
@@ -148,7 +148,7 @@ export function ResultsView({ assessment, input }: { assessment: Assessment; inp
         if (cr.length === 0) return null;
         return (
           <section key={c.id} className="space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wide text-borg-red">Compartment · {c.name} ({c.floorAreaM2} m² / {c.volumeM3} m³)</h3>
+            <h3 className="text-xs font-bold uppercase tracking-wide text-borg-red">Compartment · {c.name} — Class {c.buildingClass ?? input.buildingClass} ({c.floorAreaM2} m² / {c.volumeM3} m³)</h3>
             {cr.map((r, i) => <Card key={i} r={r} />)}
           </section>
         );

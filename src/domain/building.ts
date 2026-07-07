@@ -103,6 +103,13 @@ export interface Compartment {
   name: string;
   floorAreaM2: number;
   volumeM3: number;
+  /**
+   * The compartment's own class, for a genuinely fire-separated multi-class
+   * building (e.g. a Class 7b warehouse fire-walled from a Class 5 office). When
+   * set, this compartment's size (C3D3) and setback/FRL (Spec 5) are assessed
+   * against ITS class group. Absent ⇒ the compartment uses the building class.
+   */
+  buildingClass?: BuildingClass;
   externalWalls: ExternalWall[];
   /**
    * C3D3 size-check carve-out, or `null` for a normal compartment. When set, the

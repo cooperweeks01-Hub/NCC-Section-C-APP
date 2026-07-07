@@ -64,6 +64,8 @@ export function ClassifyStep({
   const useHelpClass = () => {
     if (result.buildingClass === null) return;
     p.setClass(result.buildingClass);
+    // Fire-separated multi-class ⇒ preload both parts as per-class compartments.
+    if (result.compartments) p.preloadCompartments(result.compartments);
     setClassChosen(true);
   };
 

@@ -1,9 +1,9 @@
 import { isInScope } from "../domain/building.ts";
 import type {
+  BuildingClass,
   BuildingInput,
   Compartment,
   ConstructionType,
-  InScopeClass,
 } from "../domain/building.ts";
 import { isUsable } from "../domain/ncc-value.ts";
 import { c3d3GroupFor } from "../data/schema.ts";
@@ -54,22 +54,27 @@ const ONEROUSNESS: Record<ConstructionType, number> = { A: 3, B: 2, C: 1 };
 /** Types in ascending onerousness. */
 const TYPES_ASC: ConstructionType[] = ["C", "B", "A"];
 
-/** Does a compartment fit its C3D3 limit at `type`? Exempt ⇒ always; unverified ⇒ null. */
+/**
+ * Does a compartment fit its C3D3 limit at `type`, against ITS OWN class? Exempt
+ * (C3D2(1)) ⇒ always; out-of-scope class or unverified limit ⇒ null (unknown).
+ */
 function compartmentFitsAt(
   data: NccDataLayer,
-  cls: InScopeClass,
   type: ConstructionType,
   c: Compartment,
+  buildingClass: BuildingClass,
 ): boolean | null {
-  if (c.sizeExemption != null) return true; // C3D2(1) — size limits do not apply
+  const cls = c.buildingClass ?? buildingClass;
+  if (!isInScope(cls)) return null;
+  if (c.sizeExemption != null) return true;
   const cell = data.c3d3[c3d3GroupFor(cls)][type];
   if (!isUsable(cell.maxFloorAreaM2) || !isUsable(cell.maxVolumeM3)) return null;
   return c.floorAreaM2 <= cell.maxFloorAreaM2.value && c.volumeM3 <= cell.maxVolumeM3.value;
 }
 
-/** Do ALL compartments fit their C3D3 limit at `type`? */
-function allFitAt(data: NccDataLayer, cls: InScopeClass, type: ConstructionType, comps: Compartment[]): boolean {
-  return comps.every((c) => compartmentFitsAt(data, cls, type, c) === true);
+/** Do ALL compartments fit their (own-class) C3D3 limit at `type`? */
+function allFitAt(data: NccDataLayer, type: ConstructionType, comps: Compartment[], buildingClass: BuildingClass): boolean {
+  return comps.every((c) => compartmentFitsAt(data, type, c, buildingClass) === true);
 }
 
 export function assessProject(input: BuildingInput, data: NccDataLayer): Assessment {
@@ -84,14 +89,15 @@ export function assessProject(input: BuildingInput, data: NccDataLayer): Assessm
       ? override
       : requiredMin;
 
-  // Escalation trial (C→B→A) + upgrade suggestion — building-wide, needs all compartments.
+  // Escalation trial (C→B→A) + upgrade suggestion — building-wide, needs all
+  // compartments. The required Type is building-wide because Table C2D2 is uniform
+  // across Class 5–8 (a class-specific C2D2 would need per-class Type handling here).
   let typeTrials: TypeTrial[] | undefined;
   let sizeUpgradeSuggestion: ConstructionType | null = null;
   if (inScope && requiredMin !== null) {
-    const cls = input.buildingClass as InScopeClass;
     const trialTypes = TYPES_ASC.filter((t) => ONEROUSNESS[t] >= ONEROUSNESS[requiredMin]);
     typeTrials = trialTypes.map((t) => {
-      const fit = allFitAt(data, cls, t, input.compartments);
+      const fit = allFitAt(data, t, input.compartments, input.buildingClass);
       return {
         type: t,
         allCompartmentsFit: fit,
@@ -100,9 +106,9 @@ export function assessProject(input: BuildingInput, data: NccDataLayer): Assessm
           : `A compartment exceeds the Type ${t} C3D3 limit.`,
       };
     });
-    if (effectiveType !== null && !allFitAt(data, cls, effectiveType, input.compartments)) {
+    if (effectiveType !== null && !allFitAt(data, effectiveType, input.compartments, input.buildingClass)) {
       sizeUpgradeSuggestion =
-        trialTypes.find((t) => ONEROUSNESS[t] > ONEROUSNESS[effectiveType] && allFitAt(data, cls, t, input.compartments)) ?? null;
+        trialTypes.find((t) => ONEROUSNESS[t] > ONEROUSNESS[effectiveType] && allFitAt(data, t, input.compartments, input.buildingClass)) ?? null;
     }
   }
 
@@ -141,11 +147,41 @@ export function assessProject(input: BuildingInput, data: NccDataLayer): Assessm
     results.push(assessSetbackSeparation({ input, data, compartment, requiredType: effectiveType }));
   }
 
-  results.push(assessFrlSchedule({ input, data, requiredType: effectiveType }));
+  // FRL schedule — one per DISTINCT class present (fire-separated multi-class);
+  // a single-class building yields exactly one, as before.
+  const distinctClasses = [...new Set(input.compartments.map((c) => c.buildingClass ?? input.buildingClass))];
+  for (const cls of distinctClasses.length > 0 ? distinctClasses : [input.buildingClass]) {
+    results.push(assessFrlSchedule({ input, data, requiredType: effectiveType, assessClass: cls }));
+  }
+
   results.push(...knockOnFlags(input));
   results.push(...advisories(input));
 
+  // C3D4(c): if the concession is used in a multi-part building, flag (do NOT
+  // compute) the "buildings < 6 m apart are one building" consideration.
+  if (results.some((r) => r.check === "LargeIsolated") && (input.fireWallsSeparateCompartments || input.compartments.length > 1)) {
+    results.push(c3d4cFlag(input));
+  }
+
   return { inScope, requiredType: requiredMin, effectiveType, results };
+}
+
+/** C3D4(c) — flag + cite only; whether it applies is a building-vs-compartment judgement. */
+function c3d4cFlag(input: BuildingInput): ComplianceResult<FlagDetail> {
+  return complianceResult<FlagDetail>({
+    check: "KnockOnFlag",
+    status: "flag",
+    clauseRef: "C3D4(c)",
+    detail: {
+      trigger: "Large-isolated concession used in a multi-part building",
+      guidance:
+        "Consider C3D4(c): where there is more than one building on the allotment and they are closer than 6 m, they are regarded as one building and must COLLECTIVELY satisfy the large-isolated limits and the C3D5 open-space / vehicular-access requirements. Whether genuinely fire-separated parts are 'separate buildings' is a classification judgement — verify with your building surveyor whether C3D4(c) applies and, if so, that the open space / perimeter access extends around the whole ≤ 6 m group (including any part under the size threshold).",
+      source: "NCC C3D4(c) / C3D5",
+    },
+    summary: "C3D4(c) consideration: parts within 6 m may be one building — verify the open-space/access extends to the whole group.",
+    inputSnapshot: { fireWallsSeparateCompartments: input.fireWallsSeparateCompartments },
+    usesUnverifiedData: false,
+  });
 }
 
 /** §6.9 knock-on flags — flag + cite only, never computed. */

@@ -1,4 +1,5 @@
-import type { CompartmentSizeExemption } from "../domain/building.ts";
+import type { BuildingClass, CompartmentSizeExemption } from "../domain/building.ts";
+import { IN_SCOPE_CLASSES } from "../domain/building.ts";
 import type { LargeIsolatedDetail, TypeOfConstructionDetail } from "../domain/result.ts";
 import { nccData } from "../data/index.ts";
 import type { UseProject } from "../state/project.ts";
@@ -23,7 +24,14 @@ export function CompartmentsStep({ p }: { p: UseProject }) {
             <TextInput value={c.name} onChange={(v) => p.updateCompartment(c.id, { name: v })} />
             {p.input.compartments.length > 1 && <Button variant="ghost" onClick={() => p.removeCompartment(c.id)}>Remove</Button>}
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-4 md:grid-cols-3">
+          <div className="mt-3 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <Field label="Class" hint="per-compartment">
+              <Select
+                value={(c.buildingClass ?? p.input.buildingClass) as string}
+                options={IN_SCOPE_CLASSES.map((cl) => ({ value: cl as string, label: `Class ${cl}` }))}
+                onChange={(v) => p.updateCompartment(c.id, { buildingClass: v as BuildingClass })}
+              />
+            </Field>
             <Field label="Floor area (m²)"><NumberInput value={c.floorAreaM2} min={0} step={100} onChange={(v) => p.updateCompartment(c.id, { floorAreaM2: v ?? 0 })} /></Field>
             <Field label="Volume (m³)"><NumberInput value={c.volumeM3} min={0} step={100} onChange={(v) => p.updateCompartment(c.id, { volumeM3: v ?? 0 })} /></Field>
             <Field label="Size carve-out" hint="C3D2(1)">

@@ -82,7 +82,12 @@ describe("classifyFromAnswers — mixed uses, fire-separated", () => {
     );
     expect(r.buildingClass).toBe("7b");
     expect(r.separateCompartments).toBe(true);
-    expect(r.rationale).toMatch(/separate compartment/i);
+    expect(r.rationale).toMatch(/separate .*compartment/i);
+    // Both in-scope parts are preloadable, each with its own class.
+    expect(r.compartments).toEqual([
+      { name: "Warehouse", buildingClass: "7b" },
+      { name: "Office", buildingClass: "5" },
+    ]);
   });
 });
 

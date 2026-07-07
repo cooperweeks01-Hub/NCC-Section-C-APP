@@ -151,7 +151,7 @@ function FrlScheduleView({ d }: { d: FrlScheduleDetail }) {
   return (
     <View>
       <View style={s.tableHead}>
-        <Text style={[s.th, col("62%")]}>Element (Type {d.type ?? "—"})</Text>
+        <Text style={[s.th, col("62%")]}>Element (Type {d.type ?? "—"}{d.assessedClass ? `, Class ${d.assessedClass}` : ""})</Text>
         <Text style={[s.th, col("23%")]}>FRL</Text>
         <Text style={[s.th, col("15%")]}>Clause</Text>
       </View>
@@ -265,7 +265,7 @@ export function ComplianceReport({ project }: { project: ProjectState }) {
 
         {byCompartment.map(({ compartment, results: cr }) => (
           <View key={compartment.id}>
-            <Text style={s.compartmentTitle}>Compartment: {compartment.name} ({compartment.floorAreaM2} m² / {compartment.volumeM3} m³)</Text>
+            <Text style={s.compartmentTitle}>Compartment: {compartment.name} — Class {compartment.buildingClass ?? input.buildingClass} ({compartment.floorAreaM2} m² / {compartment.volumeM3} m³)</Text>
             {cr.length === 0 ? <Text style={s.td}>No compartment-specific results.</Text> : cr.map((r, i) => <ResultCard key={i} result={r} />)}
           </View>
         ))}

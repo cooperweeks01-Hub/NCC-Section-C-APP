@@ -76,6 +76,7 @@ export interface UseProject {
   setMeta: (patch: Partial<ProjectMeta>) => void;
   setInput: (patch: Partial<BuildingInput>) => void;
   setClass: (cls: BuildingClass) => void;
+  preloadCompartments: (specs: { name: string; buildingClass: BuildingClass }[]) => void;
   addCompartment: () => void;
   updateCompartment: (id: string, patch: Partial<Compartment>) => void;
   removeCompartment: (id: string) => void;
@@ -108,6 +109,25 @@ export function useProject(): UseProject {
   }, [touch]);
 
   const setClass = useCallback((cls: BuildingClass) => setInput({ buildingClass: cls }), [setInput]);
+
+  /**
+   * Replace the compartments with fire-separated parts derived from the
+   * classification questionnaire — each carrying its own class. Guarded: if the
+   * current compartments look user-modified, confirm before clobbering.
+   */
+  const preloadCompartments = useCallback((specs: { name: string; buildingClass: BuildingClass }[]) => {
+    const only = input.compartments[0];
+    const pristine =
+      input.compartments.length === 1 && !!only &&
+      only.name === "Compartment 1" && only.floorAreaM2 === 1000 && only.volumeM3 === 5000 &&
+      only.externalWalls.length === 0 && only.sizeExemption === null && only.buildingClass === undefined;
+    if (!pristine && typeof window !== "undefined" && !window.confirm("Replace your current compartments with the two fire-separated parts from the questionnaire?")) {
+      return;
+    }
+    const built = specs.map((sp, idx) => ({ ...newCompartment(idx + 1), name: sp.name, buildingClass: sp.buildingClass }));
+    setInputState((i) => ({ ...i, compartments: built, fireWallsSeparateCompartments: true }));
+    touch();
+  }, [input, touch]);
 
   const addCompartment = useCallback(() => {
     setInputState((i) => ({ ...i, compartments: [...i.compartments, newCompartment(i.compartments.length + 1)] }));
@@ -182,7 +202,7 @@ export function useProject(): UseProject {
 
   return {
     id, meta, input, assessment, isDraft, projectState,
-    setMeta, setInput, setClass,
+    setMeta, setInput, setClass, preloadCompartments,
     addCompartment, updateCompartment, removeCompartment,
     addWall, updateWall, removeWall,
     loadJson, exportJson,

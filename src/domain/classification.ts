@@ -66,10 +66,15 @@ export interface ClassifyResult {
   rationale: string;
   /**
    * Two distinct uses that ARE fire-wall separated — the caller should preload
-   * them as separate compartments (a follow-up task). `buildingClass` then holds
-   * the dominant/primary compartment's class for the class field.
+   * them as separate compartments. `buildingClass` holds the dominant part's class
+   * for the class field.
    */
   separateCompartments: boolean;
+  /**
+   * When `separateCompartments` and both uses are in scope: the two parts to
+   * preload as compartments, each carrying its own class (per-compartment class).
+   */
+  compartments?: { name: string; buildingClass: BuildingClass }[];
 }
 
 interface UseInfo {
@@ -77,6 +82,8 @@ interface UseInfo {
   cls: BuildingClass | null;
   /** Rationale phrase, e.g. "storage, warehousing or wholesale display of goods". */
   phrase: string;
+  /** Short label for a preloaded compartment name, e.g. "Warehouse". */
+  short: string;
   /** When `cls` is `null`: is the class family known (out of scope) or genuinely undetermined? */
   knownOutOfScope: boolean;
   /** When `cls` is `null` and `knownOutOfScope`: how to name the class family in prose. */
@@ -84,15 +91,15 @@ interface UseInfo {
 }
 
 const USE_INFO: Record<ClassifyUse, UseInfo> = {
-  storage: { cls: "7b", phrase: "storage, warehousing or wholesale display of goods", knownOutOfScope: false, outOfScopeLabel: "" },
-  office: { cls: "5", phrase: "professional or commercial offices", knownOutOfScope: false, outOfScopeLabel: "" },
-  manufacturing: { cls: "8", phrase: "a factory — manufacturing goods", knownOutOfScope: false, outOfScopeLabel: "" },
-  processing: { cls: "8", phrase: "processing, assembling, altering, repairing or packing goods (or a laboratory)", knownOutOfScope: false, outOfScopeLabel: "" },
-  carpark: { cls: "7a", phrase: "a carpark", knownOutOfScope: false, outOfScopeLabel: "" },
-  shop: { cls: "6", phrase: "a shop, retail sale or café", knownOutOfScope: false, outOfScopeLabel: "" },
-  health: { cls: null, phrase: "health-care, public assembly or aged-care", knownOutOfScope: true, outOfScopeLabel: "a Class 9 building" },
-  residential: { cls: null, phrase: "residential accommodation", knownOutOfScope: true, outOfScopeLabel: "a residential class (Class 1–4)" },
-  other: { cls: null, phrase: "a use that isn’t listed", knownOutOfScope: false, outOfScopeLabel: "" },
+  storage: { cls: "7b", phrase: "storage, warehousing or wholesale display of goods", short: "Warehouse", knownOutOfScope: false, outOfScopeLabel: "" },
+  office: { cls: "5", phrase: "professional or commercial offices", short: "Office", knownOutOfScope: false, outOfScopeLabel: "" },
+  manufacturing: { cls: "8", phrase: "a factory — manufacturing goods", short: "Factory", knownOutOfScope: false, outOfScopeLabel: "" },
+  processing: { cls: "8", phrase: "processing, assembling, altering, repairing or packing goods (or a laboratory)", short: "Processing", knownOutOfScope: false, outOfScopeLabel: "" },
+  carpark: { cls: "7a", phrase: "a carpark", short: "Carpark", knownOutOfScope: false, outOfScopeLabel: "" },
+  shop: { cls: "6", phrase: "a shop, retail sale or café", short: "Shop", knownOutOfScope: false, outOfScopeLabel: "" },
+  health: { cls: null, phrase: "health-care, public assembly or aged-care", short: "Health/assembly", knownOutOfScope: true, outOfScopeLabel: "a Class 9 building" },
+  residential: { cls: null, phrase: "residential accommodation", short: "Residential", knownOutOfScope: true, outOfScopeLabel: "a residential class (Class 1–4)" },
+  other: { cls: null, phrase: "a use that isn’t listed", short: "Other", knownOutOfScope: false, outOfScopeLabel: "" },
 };
 
 /** Classify a building whose whole (or dominant) use is `use`. */
@@ -164,11 +171,23 @@ export function classifyFromAnswers(a: ClassifyAnswers): ClassifyResult {
     const dominant = resolveDominant(a) ?? primaryUse;
     const other = dominant === primaryUse ? secondaryUse : primaryUse;
     const base = singleUseResult(dominant);
+    const dom = USE_INFO[dominant];
+    const oth = USE_INFO[other];
+    // Preload both parts as compartments (each its own class) only when BOTH are
+    // in-scope classes — otherwise the out-of-scope part can't be assessed.
+    const compartments =
+      dom.cls && oth.cls && isInScope(dom.cls) && isInScope(oth.cls)
+        ? [
+            { name: dom.short, buildingClass: dom.cls },
+            { name: oth.short, buildingClass: oth.cls },
+          ]
+        : undefined;
     return {
       buildingClass: base.buildingClass,
       inScope: base.inScope,
-      rationale: `The two uses are separated by a fire-rated wall, so under NCC Part A6 each compartment is classified on its own. ${base.rationale} The ${USE_INFO[other].phrase} part will be entered as a separate compartment.`,
+      rationale: `The two uses are separated by a fire-rated wall, so under NCC Part A6 each compartment is classified on its own. ${base.rationale} The ${oth.phrase} part is a separate Class ${oth.cls ?? "?"} compartment.`,
       separateCompartments: true,
+      ...(compartments ? { compartments } : {}),
     };
   }
 
